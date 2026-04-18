@@ -1,1 +1,2439 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Sonroc Care — Operations</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#f5f4f0;color:#1a1a1a;min-height:100vh;font-size:14px}
+.app{display:flex;min-height:100vh}
+.sidebar{width:210px;background:#fff;border-right:0.5px solid rgba(0,0,0,0.12);display:flex;flex-direction:column;padding:1.25rem 0;flex-shrink:0;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{padding:0 1rem 1rem;border-bottom:0.5px solid rgba(0,0,0,0.12);margin-bottom:0.75rem}
+.logo-name{font-size:14px;font-weight:600;color:#1a3a5c}
+.logo-sub{font-size:11px;color:#888;margin-top:1px}
+.role-toggle{margin:0 0.75rem 0.75rem;border:0.5px solid rgba(0,0,0,0.15);border-radius:8px;overflow:hidden;display:flex}
+.role-btn{flex:1;padding:5px 4px;font-size:10px;border:none;cursor:pointer;font-family:inherit;font-weight:600;background:#f5f4f0;color:#666;transition:all 0.15s;letter-spacing:0.2px}
+.role-btn.active-admin{background:#1a3a5c;color:#fff}
+.role-btn.active-manager{background:#3B6D11;color:#fff}
+.role-btn.active-dsp{background:#854F0B;color:#fff}
+.nav-section{padding:0 0.5rem;margin-bottom:0.5rem}
+.nav-label{font-size:10px;font-weight:600;color:#aaa;letter-spacing:0.8px;text-transform:uppercase;padding:0 0.5rem;margin-bottom:0.25rem}
+.nav-item{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:7px;cursor:pointer;font-size:12px;color:#555;border:none;background:none;width:100%;text-align:left;transition:all 0.12s}
+.nav-item:hover{background:#f0f0f0;color:#1a1a1a}
+.nav-item.active{background:#1a3a5c;color:#fff}
+.nav-item.active-mgr{background:#3B6D11;color:#fff}
+.nav-item.active-dsp{background:#854F0B;color:#fff}
+.main{flex:1;overflow:auto;min-width:0}
+.topbar{background:#fff;border-bottom:0.5px solid rgba(0,0,0,0.12);padding:0.75rem 1.25rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.page-title{font-size:15px;font-weight:600}
+.role-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.role-badge.admin{background:#E6F1FB;color:#185FA5}
+.role-badge.manager{background:#EAF3DE;color:#3B6D11}
+.role-badge.dsp{background:#FAEEDA;color:#854F0B}
+.btn{padding:5px 12px;border-radius:7px;font-size:12px;cursor:pointer;border:0.5px solid rgba(0,0,0,0.2);background:#fff;color:#1a1a1a;font-family:inherit;transition:all 0.12s}
+.btn:hover{background:#f5f5f5}
+.btn-primary{background:#1a3a5c;color:#fff;border-color:#1a3a5c}
+.btn-primary:hover{background:#142d48}
+.btn-success{background:#3B6D11;color:#fff;border-color:#3B6D11}
+.btn-success:hover{background:#2d5309}
+.btn-danger{background:#A32D2D;color:#fff;border-color:#A32D2D}
+.btn-danger:hover{background:#7a2020}
+.btn-disabled{opacity:0.4;cursor:not-allowed;background:#f0f0f0;color:#aaa;border-color:#ddd}
+.content{padding:1.25rem}
+.card{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:1.1rem;margin-bottom:0.9rem}
+.card-title{font-size:13px;font-weight:600;margin-bottom:0.9rem;color:#555}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:0.9rem}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.9rem}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:0.9rem}
+.metric{background:#f5f4f0;border-radius:8px;padding:0.9rem;text-align:center}
+.metric-val{font-size:26px;font-weight:600;color:#1a3a5c}
+.metric-lbl{font-size:11px;color:#666;margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:7px 10px;font-size:10px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;border-bottom:0.5px solid rgba(0,0,0,0.1)}
+td{padding:9px 10px;border-bottom:0.5px solid rgba(0,0,0,0.07);vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+.badge{display:inline-block;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600}
+.bs{background:#EAF3DE;color:#3B6D11}
+.bw{background:#FAEEDA;color:#854F0B}
+.bd{background:#FCEBEB;color:#A32D2D}
+.bi{background:#E6F1FB;color:#185FA5}
+.bg{background:#F1EFE8;color:#5F5E5A}
+.bt{background:#E1F5EE;color:#0F6E56}
+.avatar{width:30px;height:30px;border-radius:50%;background:#1a3a5c;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.fg{margin-bottom:0.85rem}
+.fl{font-size:11px;font-weight:600;color:#555;margin-bottom:3px;display:block}
+.fi{width:100%;padding:7px 9px;border:0.5px solid rgba(0,0,0,0.2);border-radius:7px;font-size:12px;font-family:inherit;background:#fff;color:#1a1a1a}
+.fi:focus{outline:none;border-color:#1a3a5c;box-shadow:0 0 0 2px rgba(26,58,92,0.12)}
+textarea.fi{resize:vertical;min-height:70px}
+select.fi{cursor:pointer}
+.mo{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:100;padding:1rem}
+.md{background:#fff;border-radius:12px;padding:1.4rem;width:100%;max-width:620px;max-height:92vh;overflow-y:auto}
+.mt{font-size:15px;font-weight:600;margin-bottom:1.1rem}
+.mf{display:flex;gap:8px;justify-content:flex-end;margin-top:1.1rem;padding-top:0.9rem;border-top:0.5px solid rgba(0,0,0,0.1)}
+.tabs{display:flex;gap:3px;border-bottom:0.5px solid rgba(0,0,0,0.1);margin-bottom:1.1rem}
+.tab{padding:7px 12px;font-size:12px;cursor:pointer;border:none;background:none;color:#666;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit}
+.tab.active{color:#1a3a5c;border-bottom-color:#1a3a5c;font-weight:600}
+.pb{background:#eee;border-radius:20px;height:5px;overflow:hidden;margin-top:3px}
+.pf{height:100%;border-radius:20px;background:#1a3a5c}
+.alert{padding:9px 12px;border-radius:7px;font-size:12px;margin-bottom:0.65rem;line-height:1.5}
+.a-warn{background:#FAEEDA;color:#854F0B;border-left:3px solid #EF9F27}
+.a-ok{background:#EAF3DE;color:#3B6D11;border-left:3px solid #639922}
+.a-err{background:#FCEBEB;color:#A32D2D;border-left:3px solid #E24B4A}
+.a-info{background:#E6F1FB;color:#185FA5;border-left:3px solid #378ADD}
+.dr{display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);font-size:12px}
+.dr:last-child{border-bottom:none}
+.dl{color:#666}
+.sig{border:0.5px dashed rgba(0,0,0,0.25);border-radius:7px;height:72px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:12px;cursor:pointer;margin-top:6px}
+.sig.done{border-style:solid;border-color:#639922;background:#EAF3DE;color:#3B6D11;font-weight:600}
+.pill{background:#f0f0f0;border:0.5px solid rgba(0,0,0,0.1);border-radius:20px;padding:2px 8px;font-size:11px;color:#555;display:inline-block;margin:2px}
+.pill.on{background:#E6F1FB;color:#185FA5;border-color:#B5D4F4}
+hr{border:none;border-top:0.5px solid rgba(0,0,0,0.1);margin:0.9rem 0}
+.sched-wrap{display:grid;grid-template-columns:90px repeat(7,1fr);gap:1px;background:rgba(0,0,0,0.1);border-radius:8px;overflow:hidden;font-size:11px}
+.sh{background:#f5f4f0;font-weight:600;text-align:center;padding:5px 3px;color:#666}
+.sc{background:#fff;padding:4px 3px;min-height:38px}
+.ss{border-radius:3px;padding:2px 4px;font-size:10px;margin-bottom:2px;color:#fff}
+.ss.m{background:#185FA5}
+.ss.e{background:#3B6D11}
+.ss.n{background:#4B1528}
+.ss.a{background:#5F5E5A}
+.ss.rto{background:#7B3F00;border:1px dashed #FAC775;color:#fff;font-style:italic}
+.sc.rto-cell{background:#FFF8F0}
+.clock-card.in{border-left:3px solid #0F6E56}
+.clock-card.blocked{border-left:3px solid #A32D2D}
+.notif-block{border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:0.9rem;margin-bottom:0.75rem;background:#fafafa}
+.client-section{border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:1rem;margin-bottom:0.75rem}
+.client-section.done{border-left:3px solid #639922}
+.client-section.incomplete{border-left:3px solid #E24B4A}
+.doc-item{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;border:0.5px solid rgba(0,0,0,0.1);border-radius:7px;margin-bottom:6px;font-size:12px}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem}
+input[type=checkbox]{accent-color:#1a3a5c;width:13px;height:13px}
+.read-only-banner{background:#F1EFE8;border:0.5px solid #B4B2A9;border-radius:7px;padding:8px 12px;font-size:11px;color:#5F5E5A;margin-bottom:0.9rem}
+.approval-item{border:0.5px solid #FAC775;border-radius:8px;padding:10px 12px;margin-bottom:8px;background:#FAEEDA}
 
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f5f4f0;padding:1rem}
+.login-card{background:#fff;border-radius:16px;padding:2.5rem;width:100%;max-width:400px;box-shadow:0 4px 24px rgba(0,0,0,0.08)}
+.login-logo{font-size:20px;font-weight:700;color:#1a3a5c;text-align:center;margin-bottom:4px}
+.login-sub{font-size:12px;color:#888;text-align:center;margin-bottom:1.5rem}
+.login-err{background:#FCEBEB;color:#A32D2D;border-radius:7px;padding:8px 12px;font-size:12px;margin-bottom:1rem;display:none}
+.login-info{background:#E6F1FB;color:#185FA5;border-radius:7px;padding:8px 12px;font-size:12px;margin-bottom:1rem}
+.login-btn{width:100%;padding:10px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 0.15s}
+.login-btn:hover{background:#142d48}
+.login-btn:disabled{opacity:0.5;cursor:not-allowed}
+.login-forgot{text-align:center;margin-top:1rem;font-size:12px}
+.login-forgot a{color:#185FA5;text-decoration:none}
+.user-bar{display:flex;align-items:center;gap:8px;padding:0.75rem 1rem;border-top:0.5px solid rgba(0,0,0,0.1);margin-top:auto}
+.logout-btn{font-size:11px;color:#A32D2D;cursor:pointer;border:none;background:none;font-family:inherit;text-decoration:underline}
+</style></head><body>
+<div class="app" id="root"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+// ── SUPABASE CONNECTION ──────────────────────────────────
+const SUPABASE_URL = 'https://ehctmrmwbzpbhnjwxroo.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoY3Rtcm13YnpwYmhuand4cm9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NzcxNzMsImV4cCI6MjA5MjA1MzE3M30.gTn9PvmeqRY3KbnDdb99oIJBqnNrkrBzWNrJG6NgPWQ';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;   // Supabase auth user
+let currentProfile = null; // profiles table row (has role, name, etc.)
+
+// ── LOGIN SCREEN ─────────────────────────────────────────
+function renderLogin(errorMsg='', mode='login') {
+  document.getElementById('root').innerHTML = `
+    <div class="login-wrap">
+      <div class="login-card">
+        <div class="login-logo">Sonroc Care</div>
+        <div class="login-sub">Perfect Stay Group — Staff Portal</div>
+        ${errorMsg ? '<div class="login-err" style="display:block">' + errorMsg + '</div>' : ''}
+        ${mode === 'forgot' ? `
+          <div class="login-info">Enter your email and we'll send you a password reset link.</div>
+          <div class="fg"><label class="fl">Email</label><input class="fi" type="email" id="resetEmail" placeholder="you@sonroc.com"></div>
+          <button class="login-btn" id="resetBtn" onclick="handleReset()">Send Reset Link</button>
+          <div class="login-forgot"><a href="#" onclick="renderLogin();return false">← Back to login</a></div>
+        ` : mode === 'change' ? `
+          <div class="login-info">Set your new password.</div>
+          <div class="fg"><label class="fl">New Password</label><input class="fi" type="password" id="newPass" placeholder="New password (min 6 characters)"></div>
+          <div class="fg"><label class="fl">Confirm Password</label><input class="fi" type="password" id="confirmPass" placeholder="Confirm new password"></div>
+          <button class="login-btn" onclick="handleChangePassword()">Update Password</button>
+        ` : `
+          <div class="fg"><label class="fl">Email</label><input class="fi" type="email" id="loginEmail" placeholder="you@sonroc.com"></div>
+          <div class="fg"><label class="fl">Password</label><input class="fi" type="password" id="loginPass" placeholder="Enter your password" onkeydown="if(event.key==='Enter')handleLogin()"></div>
+          <button class="login-btn" id="loginBtn" onclick="handleLogin()">Sign In</button>
+          <div class="login-forgot"><a href="#" onclick="renderLogin('','forgot');return false">Forgot password?</a></div>
+        `}
+      </div>
+    </div>`;
+}
+
+async function handleLogin() {
+  const email = document.getElementById('loginEmail')?.value?.trim();
+  const pass = document.getElementById('loginPass')?.value;
+  if (!email || !pass) { renderLogin('Please enter your email and password.'); return; }
+  const btn = document.getElementById('loginBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Signing in...'; }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { renderLogin(error.message); return; }
+  await loadUserAndStart();
+}
+
+async function handleReset() {
+  const email = document.getElementById('resetEmail')?.value?.trim();
+  if (!email) { renderLogin('Please enter your email.', 'forgot'); return; }
+  const btn = document.getElementById('resetBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin
+  });
+  if (error) { renderLogin(error.message, 'forgot'); return; }
+  renderLogin('Check your email for the reset link. It may take a minute.', 'forgot');
+}
+
+async function handleChangePassword() {
+  const pass = document.getElementById('newPass')?.value;
+  const confirm = document.getElementById('confirmPass')?.value;
+  if (!pass || pass.length < 6) { renderLogin('Password must be at least 6 characters.', 'change'); return; }
+  if (pass !== confirm) { renderLogin('Passwords do not match.', 'change'); return; }
+  const { error } = await sb.auth.updateUser({ password: pass });
+  if (error) { renderLogin(error.message, 'change'); return; }
+  await loadUserAndStart();
+}
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  currentUser = null;
+  currentProfile = null;
+  renderLogin();
+}
+
+async function loadUserAndStart() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) { renderLogin(); return; }
+  currentUser = user;
+  // Load profile
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', user.id).single();
+  currentProfile = profile;
+  if (profile) {
+    // Set the app role based on database profile
+    S.role = profile.role || 'dsp';
+    S.currentUserId = user.id;
+    S.currentUserName = profile.name || user.email;
+    S.currentUserEmail = user.email;
+    S.currentUserRole = profile.role || 'dsp';
+  }
+  // Start the app
+  render();
+}
+
+// ── INIT: Check session on page load ─────────────────────
+async function initAuth() {
+  // Check for password recovery flow (URL has type=recovery)
+  const params = new URLSearchParams(window.location.hash.substring(1));
+  const type = params.get('type');
+  if (type === 'recovery') {
+    renderLogin('', 'change');
+    return;
+  }
+  // Check existing session
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    await loadUserAndStart();
+  } else {
+    renderLogin();
+  }
+}
+
+
+const S={
+  role:'admin',page:'dashboard',modal:null,tab:0,modalCtx:{},
+  adminConfig:{
+    roles:['Support Worker','Team Lead','Manager','On-Call'],
+    locations:['Home A','Home B','Day Program'],
+    shiftTypes:['7a-3p','3p-11p','11p-7a','Admin'],
+    incidentTypes:['Behavioral','Medical','Seizure','Fall/Injury','Property Damage','Elopement','Abuse/Neglect','Other'],
+    incidentSeverities:['Minor','Moderate','Serious','Critical'],
+  },
+  locationManagers:{'Home A':2,'Home B':2,'Day Program':null},
+  staff:[
+    {id:1,name:'Gregson Owner',role:'Admin',status:'active',phone:'(801)555-0100',email:'gregson@sonroc.com',dob:'1980-01-15',startDate:'2018-01-01',certs:['CPR','First Aid','Med Admin','Management'],location:'Admin',docs:[],payType:'salary',payRate:75000,overtimeRate:0},
+    {id:2,name:'Ashley Tran',role:'Manager',status:'active',phone:'(801)555-0144',email:'ashley@sonroc.com',dob:'1982-03-17',startDate:'2019-05-01',certs:['CPR','First Aid','Med Admin','Management'],location:'Home A',docs:[],payType:'salary',payRate:55000,overtimeRate:0},
+    {id:3,name:'Jordan Ellis',role:'Support Worker',status:'active',phone:'(801)555-0111',email:'jordan@sonroc.com',dob:'1990-04-12',startDate:'2022-03-01',certs:['CPR','First Aid','Med Admin'],location:'Home A',docs:[],payType:'hourly',payRate:18.50,overtimeRate:27.75},
+    {id:4,name:'Maria Santos',role:'Team Lead',status:'active',phone:'(801)555-0122',email:'maria@sonroc.com',dob:'1985-11-22',startDate:'2020-07-15',certs:['CPR','First Aid','Med Admin','Behavior Support'],location:'Home B',docs:[],payType:'hourly',payRate:17.00,overtimeRate:25.50},
+    {id:5,name:'Devon Park',role:'Support Worker',status:'active',phone:'(801)555-0133',email:'devon@sonroc.com',dob:'1995-08-05',startDate:'2024-01-10',certs:['CPR'],location:'Home A',docs:[],payType:'hourly',payRate:15.00,overtimeRate:22.50},
+  ],
+  clients:[
+    {id:1,name:'Robert M.',dob:'1965-07-14',location:'Home A',guardian:'Linda M. (801)555-0200',primary:'Dr. Patel',dx:'Intellectual Disability',status:'active',notes:'Enjoys music, needs low-stimulation environment',docs:[]},
+    {id:2,name:'Carol W.',dob:'1978-02-28',location:'Home B',guardian:'Tom W. (801)555-0201',primary:'Dr. Nguyen',dx:'Autism Spectrum Disorder',status:'active',notes:'Non-verbal, uses AAC device',docs:[]},
+    {id:3,name:'James T.',dob:'1971-09-03',location:'Home A',guardian:'Sara T. (801)555-0202',primary:'Dr. Patel',dx:'Down Syndrome',status:'active',notes:'Very social, participates in day program Mon-Wed',docs:[]},
+  ],
+  trainingProgress:{
+    1:{completedModules:[1,2,3,4,5,6],signedPP:true,signedFinal:true},
+    2:{completedModules:[1,2,3,4,5,6],signedPP:true,signedFinal:true},
+    3:{completedModules:[1,2,3,4,5,6],signedPP:true,signedFinal:true},
+    4:{completedModules:[1,2,3,4,5,6],signedPP:true,signedFinal:true},
+    5:{completedModules:[1],signedPP:false,signedFinal:false},
+  },
+  schedule:{
+    3:{Mon:[{startTime:'07:00',endTime:'15:00',label:'Morning',location:'Home A',createdBy:1,finalized:true}],Wed:[{startTime:'07:00',endTime:'15:00',label:'Morning',location:'Home A',createdBy:1,finalized:true}],Fri:[{startTime:'15:00',endTime:'23:00',label:'Evening',location:'Home A',createdBy:2,finalized:true}]},
+    4:{Mon:[{startTime:'07:00',endTime:'15:00',label:'Morning',location:'Home B',createdBy:2,finalized:true}],Tue:[{startTime:'07:00',endTime:'15:00',label:'Morning',location:'Home B',createdBy:2,finalized:true}],Thu:[{startTime:'07:00',endTime:'15:00',label:'Morning',location:'Home B',createdBy:2,finalized:true}]},
+    5:{Tue:[{startTime:'15:00',endTime:'23:00',label:'Evening',location:'Home A',createdBy:2,finalized:true}],Thu:[{startTime:'15:00',endTime:'23:00',label:'Evening',location:'Home A',createdBy:2,finalized:true}],Sat:[{startTime:'07:00',endTime:'15:00',label:'Morning',location:'Home A',createdBy:2,finalized:true}]},
+    2:{Mon:[{startTime:'08:00',endTime:'16:00',label:'Admin',location:'Admin',createdBy:1,finalized:true}],Tue:[{startTime:'08:00',endTime:'16:00',label:'Admin',location:'Admin',createdBy:1,finalized:true}],Wed:[{startTime:'08:00',endTime:'16:00',label:'Admin',location:'Admin',createdBy:1,finalized:true}],Thu:[{startTime:'08:00',endTime:'16:00',label:'Admin',location:'Admin',createdBy:1,finalized:true}],Fri:[{startTime:'08:00',endTime:'16:00',label:'Admin',location:'Admin',createdBy:1,finalized:true}]},
+  },
+  scheduleRequests:[],
+  activeClock:{5:{clockIn:'15:01',shift:'3p-11p',location:'Home A',date:'2026-04-17'}},
+  clockRecords:[
+    {id:1,staffId:3,date:'2026-04-16',clockIn:'07:02',clockOut:'15:08',shift:'7a-3p',location:'Home A',reportSubmitted:true},
+    {id:2,staffId:4,date:'2026-04-16',clockIn:'06:58',clockOut:'15:03',shift:'7a-3p',location:'Home B',reportSubmitted:true},
+    {id:3,staffId:5,date:'2026-04-17',clockIn:'15:01',clockOut:null,shift:'3p-11p',location:'Home A',reportSubmitted:false},
+  ],
+  shiftReports:[
+    {id:1,staffId:3,date:'2026-04-16',shift:'7a-3p',location:'Home A',mood:'Good',incidents:false,
+     clientReports:[
+       {clientId:1,mood:'Good',participation:'Full',notes:'Participated in music therapy. Took all meds.'},
+       {clientId:3,mood:'Good',participation:'Partial',notes:'Went to day program. Had a great afternoon.'},
+     ]},
+  ],
+  incidents:[
+    {id:1,staffId:3,clientId:1,date:'2026-04-10',time:'14:30',type:'Behavioral',severity:'Minor',
+     description:'Robert became agitated during transition from activity room. Redirected successfully within 5 minutes.',
+     followUp:'Redirected successfully. No injury.',
+     notifications:{
+       supportCoord:{notified:true,name:'Sarah K.',date:'2026-04-10',time:'15:00'},
+       manager:{notified:true,name:'Ashley Tran',date:'2026-04-10',time:'14:45'},
+       others:[{name:'Guardian Linda M.',date:'2026-04-10',time:'15:30'}]
+     },
+     status:'Resolved'},
+  ],
+  timeOff:[
+    {id:1,staffId:5,type:'Vacation',start:'2026-04-20',end:'2026-04-22',status:'Pending',reason:'Family trip'},
+    {id:2,staffId:3,type:'Sick',start:'2026-04-15',end:'2026-04-15',status:'Approved',reason:'Illness'},
+  ],
+  // Medication profiles per client: {clientId: [{id,name,dose,route,frequency,scheduledTimes:[],prescriber,startDate,endDate,active}]}
+  medications:{
+    1:[
+      {id:1,name:'Lisinopril',dose:'10mg',route:'Oral',frequency:'Daily',scheduledTimes:['08:00'],prescriber:'Dr. Patel',startDate:'2025-01-01',endDate:'',active:true},
+      {id:2,name:'Omeprazole',dose:'20mg',route:'Oral',frequency:'Daily',scheduledTimes:['08:00','20:00'],prescriber:'Dr. Patel',startDate:'2025-03-01',endDate:'',active:true},
+    ],
+    2:[
+      {id:3,name:'Risperidone',dose:'1mg',route:'Oral',frequency:'Twice daily',scheduledTimes:['08:00','20:00'],prescriber:'Dr. Nguyen',startDate:'2024-06-01',endDate:'',active:true},
+    ],
+    3:[
+      {id:4,name:'Levothyroxine',dose:'50mcg',route:'Oral',frequency:'Daily',scheduledTimes:['07:00'],prescriber:'Dr. Patel',startDate:'2025-02-01',endDate:'',active:true},
+    ],
+  },
+  // MAR entries: [{id,clientId,medId,medName,dose,route,scheduledTime,givenTime,givenDate,staffId,status,notes,refusalReason}]
+  marEntries:[
+    {id:1,clientId:1,medId:1,medName:'Lisinopril',dose:'10mg',route:'Oral',scheduledTime:'08:00',givenTime:'08:05',givenDate:'2026-04-17',staffId:3,status:'Given',notes:'Taken with water',refusalReason:''},
+    {id:2,clientId:1,medId:2,medName:'Omeprazole',dose:'20mg',route:'Oral',scheduledTime:'08:00',givenTime:'08:06',givenDate:'2026-04-17',staffId:3,status:'Given',notes:'Before breakfast',refusalReason:''},
+    {id:3,clientId:2,medId:3,medName:'Risperidone',dose:'1mg',route:'Oral',scheduledTime:'08:00',givenTime:'08:10',givenDate:'2026-04-17',staffId:4,status:'Given',notes:'',refusalReason:''},
+  ],
+  marViewClient:null,
+  marMonth:'2026-04',
+
+  viewStaffId:null,viewClientId:null,viewIncId:null,viewReportId:null,
+  clockInStaffId:null,clockOutStaffId:null,prefillStaff:null,
+  currentTrainStaff:null,currentModuleIdx:0,quizAnswers:{},quizSubmitted:false,
+};
+
+const TM=[
+  {id:1,title:'Orientation & Company Overview',questions:[
+    {q:'Primary mission of Sonroc Care?',opts:['Maximize profit','Provide quality person-centered care','Minimize staffing','Reduce independence'],ans:1},
+    {q:'Person-centered care means:',opts:['Strict schedule','Staff preferences','Tailoring support to each individual','Doing the minimum'],ans:2},
+    {q:'First contact in emergency?',opts:['Coworker','Guardian','911','Family'],ans:2},
+  ]},
+  {id:2,title:'Abuse, Neglect & Exploitation',questions:[
+    {q:'Example of physical abuse?',opts:['Forgetting to log','Hitting a client','Being late','Missing a meeting'],ans:1},
+    {q:'Mandatory reporters report to:',opts:['Only supervisor','Adult Protective Services','Media','Other clients'],ans:1},
+    {q:'Neglect includes:',opts:['Too much food','Failing to provide necessary care','Extra medication','Being friendly'],ans:1},
+    {q:'Client discloses abuse — you:',opts:['Keep private','Do nothing','Report immediately','Ask staff first'],ans:2},
+    {q:'Exploitation means:',opts:['Fun outing','Using resources for personal gain','Financial help','Supporting independence'],ans:1},
+  ]},
+  {id:3,title:'Medication Administration',questions:[
+    {q:'Before giving meds verify:',opts:['Time only','5 Rights','Client mood','Staff preference'],ans:1},
+    {q:'Client refuses meds:',opts:['Force it','Ignore','Document and report','Give later secretly'],ans:2},
+    {q:'Meds stored:',opts:['Anywhere','Locked secure location','Kitchen counter','Staff room'],ans:1},
+    {q:'Med error must be:',opts:['Kept secret','Reported and documented','Fixed quietly','Blamed on others'],ans:1},
+  ]},
+  {id:4,title:'Behavioral Support & Crisis',questions:[
+    {q:'De-escalation means:',opts:['Escalate','Restraint first','Calm communication to reduce tension','Call police'],ans:2},
+    {q:'Behavior support plan should be:',opts:['Hidden','Followed consistently','Changed daily','Ignored'],ans:1},
+    {q:'After behavioral crisis:',opts:['Resume immediately','Document and debrief','Avoid talking','Wait until next shift'],ans:1},
+  ]},
+  {id:5,title:'Fire Safety & Emergency',questions:[
+    {q:'In case of fire, first step:',opts:['Call supervisor','Evacuate clients','Fight fire yourself','Wait'],ans:1},
+    {q:'Emergency exits must be:',opts:['Locked at night','Clearly marked and unobstructed','Used for storage','Hidden'],ans:1},
+    {q:'After evacuation:',opts:['Return inside','Account for all, call 911 if needed','Go home','Wait for management'],ans:1},
+  ]},
+  {id:6,title:'Documentation & Confidentiality',questions:[
+    {q:'Client info shared:',opts:['Anyone','Family anytime','Need-to-know basis within care team','Social media'],ans:2},
+    {q:'Documentation completed:',opts:['Weekly','After every shift accurately','When something goes wrong','When remembered'],ans:1},
+    {q:'Correct incident report includes:',opts:['Who at fault','Objective facts times actions','Your opinion','What you think happened'],ans:1},
+    {q:'HIPAA protects:',opts:['Staff schedules','Client health info','Finances','Inventory'],ans:1},
+  ]},
+];
+
+const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const ini=n=>n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+const gs=id=>S.staff.find(s=>s.id==id);
+const gc=id=>S.clients.find(c=>c.id==id);
+const today=()=>new Date().toISOString().slice(0,10);
+const nowT=()=>{const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0')};
+const tp=id=>{const p=S.trainingProgress[id]||{completedModules:[],signedPP:false,signedFinal:false};const done=p.completedModules.length+(p.signedPP?1:0)+(p.signedFinal?1:0);return{pct:Math.round(done/8*100),p}};
+// Password reset log: [{staffId, sentAt, sentBy}]
+S.passwordResetLog = S.passwordResetLog || [];
+S.auditLog = S.auditLog || [];
+
+// Central audit logger — category, action string, optional detail object
+function audit(category, action, detail=''){
+  const who = currentProfile ? currentProfile.name + ' (' + roleLabel() + ')' : roleLabel();
+  const ts = new Date().toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  S.auditLog.unshift({id:Date.now()+Math.random(),ts,who,role:S.role,category,action,detail:String(detail)});
+  if(S.auditLog.length>1000)S.auditLog=S.auditLog.slice(0,1000); // cap at 1000 entries
+}
+
+function genTempPass(){const c='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#';let p='';for(let i=0;i<10;i++)p+=c[Math.floor(Math.random()*c.length)];return p;}
+
+function sendTempPassword(staffId){
+  const s=gs(staffId);if(!s)return;
+  const pass=genTempPass();
+  const sentAt=new Date().toLocaleString();
+  S.passwordResetLog.push({staffId,sentAt,sentBy:'Gregson (Admin)',pass});
+  audit('Security','Temporary Password Sent',`${gs(staffId)?.name} · ${gs(staffId)?.email} · sent by Gregson (Admin)`);
+  // In production this triggers an actual email; here we confirm visually
+  S.modalCtx={staffId,pass,email:s.email,sentAt};
+  S.modal='pwSent';
+  render();
+}
+
+const isAdmin=()=>S.role==='admin';
+const isMgr=()=>S.role==='manager'||S.role==='admin';
+const activeClass=()=>S.role==='admin'?'active':S.role==='manager'?'active-mgr':'active-dsp';
+const roleColor=()=>S.role==='admin'?'#1a3a5c':S.role==='manager'?'#3B6D11':'#854F0B';
+const roleLabel=()=>S.role==='admin'?'Admin':S.role==='manager'?'Manager':'DSP Staff';
+const getMgrLocs=()=>Object.keys(S.locationManagers).filter(l=>S.locationManagers[l]===2);
+const canEditLoc=loc=>isAdmin()||(S.role==='manager'&&S.locationManagers[loc]===2);
+
+function nav(p){S.page=p;S.modal=null;S.tab=0;S.currentTrainStaff=null;render()}
+function om(m,ctx={}){S.modal=m;S.modalCtx=ctx;render()}
+function cm(){S.modal=null;S.modalCtx={};render()}
+function st(t){S.tab=t;render()}
+
+// Returns null if ok to clock in, or an error string if too early
+// shift is "HH:MM-HH:MM" or "HH:MM" (start time)
+function canClockIn(startTimeStr){
+  if(!startTimeStr)return null; // no scheduled shift = manual, always allow
+  // parse start out of "07:00-15:00" or bare "07:00"
+  const start=startTimeStr.split('-')[0].trim();
+  const[sh,sm]=(start.match(/^(\d{1,2}):(\d{2})/)||[]).slice(1).map(Number);
+  if(isNaN(sh))return null; // can't parse, allow
+  const now=new Date();
+  const shiftMinutes=sh*60+sm;
+  const nowMinutes=now.getHours()*60+now.getMinutes();
+  const diff=shiftMinutes-nowMinutes; // positive = shift is in the future
+  if(diff>10){
+    const opens=sh*60+sm-10;
+    const hh=Math.floor(opens/60).toString().padStart(2,'0');
+    const mm=(opens%60).toString().padStart(2,'0');
+    return'Too early to clock in. Your shift starts at '+start+'. You can clock in from '+hh+':'+mm+' (10 minutes before).';
+  }
+  return null;
+}
+
+function clockIn(sid,shift,loc){
+  const earlyErr=canClockIn(shift);
+  if(earlyErr){alert(earlyErr);return;}
+  const t=nowT(),d=today();
+  S.activeClock[sid]={clockIn:t,shift,location:loc,date:d};
+  S.clockRecords.push({id:Date.now(),staffId:sid,date:d,clockIn:t,clockOut:null,shift,location:loc,reportSubmitted:false});
+  audit('Time Clock','Clock In',`${gs(sid)?.name} clocked in at ${t} · ${shift} · ${loc}`);
+  cm();
+}
+function clockOut(sid){
+  const ac=S.activeClock[sid];
+  const hasRpt=S.shiftReports.some(r=>r.staffId===sid&&r.date===ac.date&&r.shift===ac.shift);
+  if(!hasRpt){S.clockOutStaffId=sid;om('blockClockOut');return;}
+  const rec=S.clockRecords.filter(r=>r.staffId===sid&&!r.clockOut).pop();
+  const outT=nowT();
+  if(rec){rec.clockOut=outT;rec.reportSubmitted=true;}
+  delete S.activeClock[sid];
+  audit('Time Clock','Clock Out',`${gs(sid)?.name} clocked out at ${outT}`);
+  render();
+}
+
+function approveSchedReq(id){
+  const r=S.scheduleRequests.find(x=>x.id===id);if(!r)return;
+  r.status='Approved';
+  audit('Schedule','Schedule Change Approved',`${gs(r.staffId)?.name} · ${r.day} ${r.startTime}-${r.endTime} @ ${r.location} (requested by ${gs(r.requestedBy)?.name})`);
+  if(!S.schedule[r.staffId])S.schedule[r.staffId]={};
+  const newShift={startTime:r.startTime,endTime:r.endTime,label:r.label||'',location:r.location,createdBy:r.requestedBy,finalized:true};
+  const existing=S.schedule[r.staffId][r.day];
+  if(!existing){S.schedule[r.staffId][r.day]=[newShift];}
+  else if(Array.isArray(existing)){existing.push(newShift);}
+  else{S.schedule[r.staffId][r.day]=[existing,newShift];}
+  render();
+}
+
+let otherNotifCount=0;
+function addOtherNotif(){
+  const c=++otherNotifCount;
+  const d=document.getElementById('otherNotifs');if(!d)return;
+  const div=document.createElement('div');
+  div.className='notif-block';
+  div.innerHTML=`<div class="g2"><div class="fg"><label class="fl">Name / Relation</label><input class="fi" id="onN${c}" placeholder="e.g. Guardian Linda M."></div><div></div></div>
+    <div class="g2"><div class="fg"><label class="fl">Date Notified</label><input class="fi" type="date" id="onD${c}" value="${today()}"></div><div class="fg"><label class="fl">Time Notified</label><input class="fi" type="time" id="onT${c}"></div></div>`;
+  d.appendChild(div);
+}
+
+function submitIncident(){
+  const sid=document.getElementById('iSt').value;if(!sid){alert('Select staff.');return;}
+  const others=[];
+  for(let i=1;i<=otherNotifCount;i++){
+    const nm=document.getElementById('onN'+i);
+    if(nm&&nm.value.trim())others.push({name:nm.value.trim(),date:document.getElementById('onD'+i)?.value||'',time:document.getElementById('onT'+i)?.value||''});
+  }
+  const newInc={
+    id:Date.now(),staffId:parseInt(sid),clientId:parseInt(document.getElementById('iCl').value)||null,
+    date:document.getElementById('iDt').value,time:document.getElementById('iTm').value,
+    type:document.getElementById('iTy').value,severity:document.getElementById('iSv').value,
+    description:document.getElementById('iDs').value,followUp:document.getElementById('iFu').value,
+    notifications:{
+      supportCoord:{notified:document.getElementById('nScY').value==='1',name:document.getElementById('nScN').value,date:document.getElementById('nScD').value,time:document.getElementById('nScT').value},
+      manager:{notified:document.getElementById('nMY').value==='1',name:document.getElementById('nMN').value,date:document.getElementById('nMD').value,time:document.getElementById('nMT').value},
+      others
+    },
+    status:'Open'
+  };
+  S.incidents.push(newInc);
+  audit('Incidents','Incident Report Created',`${gs(newInc.staffId)?.name} · ${newInc.type} · ${newInc.severity} · Client: ${gc(newInc.clientId)?.name||'N/A'} · Date: ${newInc.date}`);
+  otherNotifCount=0;cm();
+}
+
+function updateClientSection(cid){
+  const n=document.getElementById('cnotes_'+cid);
+  const el=document.getElementById('cs_'+cid);
+  if(el&&n)el.className='client-section '+(n.value.trim()?'done':'incomplete');
+}
+
+function submitShiftReport(prefill,acShift){
+  const sid=parseInt(document.getElementById('rSt')?.value||prefill);
+  const lo=document.getElementById('rLo')?.value||'Home A';
+  const clientsAtLoc=S.clients.filter(c=>c.location===lo);
+  const missing=clientsAtLoc.filter(c=>{const n=document.getElementById('cnotes_'+c.id);return!n||!n.value.trim();});
+  if(missing.length>0){alert('Please complete the client report for: '+missing.map(c=>c.name).join(', '));return;}
+  const clientReports=clientsAtLoc.map(c=>({clientId:c.id,mood:document.getElementById('cmood_'+c.id)?.value,participation:document.getElementById('cpart_'+c.id)?.value,notes:document.getElementById('cnotes_'+c.id)?.value}));
+  const newRpt={id:Date.now(),staffId:sid,date:document.getElementById('rDt')?.value,shift:document.getElementById('rSh')?.value,location:lo,mood:document.getElementById('rMd')?.value,incidents:document.getElementById('rIn')?.checked,clientReports};
+  S.shiftReports.push(newRpt);
+  audit('Reports','Shift Report Submitted',`${gs(sid)?.name} · ${newRpt.shift||''} · ${lo} · ${newRpt.date} · Clients: ${clientReports.map(cr=>gc(cr.clientId)?.name||'?').join(', ')}`);
+  const rec=S.clockRecords.filter(r=>r.staffId===sid&&!r.clockOut).pop();
+  if(rec)rec.reportSubmitted=true;
+  cm();
+}
+
+// Convert "HH:MM" to minutes since midnight
+function toMin(t){if(!t)return 0;const[h,m]=t.split(':').map(Number);return h*60+m;}
+
+// Map day name to date offset from Mon Apr 14 2026 (our demo week)
+const WEEK_START=new Date('2026-04-14');
+function dayToDate(dayName){
+  const idx=days.indexOf(dayName);
+  const d=new Date(WEEK_START);d.setDate(d.getDate()+idx);
+  return d.toISOString().slice(0,10);
+}
+function dateToDayName(dateStr){
+  const d=new Date(dateStr+'T00:00:00');
+  const diff=Math.round((d-WEEK_START)/(1000*60*60*24));
+  return diff>=0&&diff<7?days[diff]:null;
+}
+
+// Returns approved RTO record if staff has approved time off covering this day
+function getRTO(staffId,dayName){
+  const dateStr=dayToDate(dayName);
+  return S.timeOff.find(t=>t.staffId===staffId&&t.status==='Approved'&&t.start<=dateStr&&t.end>=dateStr)||null;
+}
+
+// Returns overlapping shift label if new start/end overlaps any existing shift on that day by >1 min
+function getOverlap(sid,day,newStart,newEnd,excludeIdx=null){
+  const dayShifts=S.schedule[sid]&&S.schedule[sid][day];
+  if(!dayShifts)return null;
+  const shifts=Array.isArray(dayShifts)?dayShifts:[dayShifts];
+  const ns=toMin(newStart),ne=toMin(newEnd);
+  // Handle overnight: if end <= start treat end as next-day (add 1440)
+  const neAdj=ne<=ns?ne+1440:ne;
+  for(let i=0;i<shifts.length;i++){
+    if(excludeIdx!==null&&i===excludeIdx)continue;
+    const es=toMin(shifts[i].startTime),ee=toMin(shifts[i].endTime);
+    const eeAdj=ee<=es?ee+1440:ee;
+    // Overlap if intervals intersect by more than 1 minute
+    const overlapMin=Math.min(neAdj,eeAdj)-Math.max(ns,es);
+    if(overlapMin>1)return shifts[i].startTime+'-'+shifts[i].endTime+' at '+shifts[i].location;
+  }
+  return null;
+}
+
+function submitShift(){
+  const sid=parseInt(document.getElementById('ssS')?.value);
+  const day=document.getElementById('ssD')?.value;
+  const startTime=document.getElementById('ssStart')?.value;
+  const endTime=document.getElementById('ssEnd')?.value;
+  const label=document.getElementById('ssLabel')?.value.trim()||'';
+  const loc=document.getElementById('ssL')?.value;
+  if(!sid){alert('Select a staff member.');return;}
+  if(!startTime||!endTime){alert('Enter start and end times.');return;}
+  // Block if staff has approved RTO on this day
+  const rto=getRTO(sid,day);
+  if(rto){
+    alert('CANNOT SCHEDULE: '+gs(sid)?.name+' has approved time off on '+day+' ('+rto.start+(rto.end!==rto.start?' – '+rto.end:'')+', '+rto.type+'). Deny or cancel the time-off request before scheduling this day.');
+    return;
+  }
+  const conflict=getOverlap(sid,day,startTime,endTime);
+  if(conflict){
+    alert('SCHEDULE CONFLICT: '+gs(sid)?.name+' already has a shift ('+conflict+') on '+day+' that overlaps by more than 1 minute. Adjust the times to continue.');
+    return;
+  }
+  const newShift={startTime,endTime,label,location:loc,createdBy:isAdmin()?1:2,finalized:false};
+  if(S.role==='manager'){
+    const reason=document.getElementById('ssReason')?.value||'';
+    // If any existing shift on that day is finalized, route to approval
+    const dayShifts=S.schedule[sid]&&S.schedule[sid][day];
+    const existingArr=dayShifts?(Array.isArray(dayShifts)?dayShifts:[dayShifts]):[];
+    if(existingArr.some(x=>x.finalized)){
+      S.scheduleRequests.push({id:Date.now(),staffId:sid,day,startTime,endTime,label,location:loc,requestedBy:2,reason,status:'Pending'});
+      audit('Schedule','Schedule Change Requested',`${gs(sid)?.name} · ${day} ${startTime}-${endTime} @ ${loc} — awaiting admin approval`);
+      alert('Change request submitted for admin approval.');cm();return;
+    }
+  }
+  if(!S.schedule[sid])S.schedule[sid]={};
+  // Store as array to support multiple shifts per day
+  const existing=S.schedule[sid][day];
+  if(!existing){S.schedule[sid][day]=[newShift];}
+  else if(Array.isArray(existing)){existing.push(newShift);}
+  else{S.schedule[sid][day]=[existing,newShift];}
+  audit('Schedule','Shift Added',`${gs(sid)?.name} · ${day} ${startTime}-${endTime}${label?' ('+label+')':''} @ ${loc}`);
+  cm();
+}
+
+// ── PAGE RENDERS ─────────────────────────────────────────
+function renderDashboard(){
+  // DSP-specific dashboard: show their own schedule, clock status, upcoming shifts
+  if(S.role==='dsp'){
+    // In demo mode, DSP is Devon Park (id=5)
+    const dspId=5;
+    const dsp=gs(dspId);
+    const ac=S.activeClock[dspId];
+    const hasRpt=ac&&S.shiftReports.some(r=>r.staffId===dspId&&r.date===ac.date&&r.shift===ac.shift);
+    const blocked=ac&&!hasRpt;
+    const{pct}=tp(dspId);
+    // Upcoming shifts this week
+    const upcomingShifts=[];
+    days.forEach(d=>{
+      const dayData=S.schedule[dspId]&&S.schedule[dspId][d];
+      if(!dayData)return;
+      const shifts=Array.isArray(dayData)?dayData:[dayData];
+      shifts.forEach(sh=>upcomingShifts.push({day:d,...sh}));
+    });
+    const myReports=S.shiftReports.filter(r=>r.staffId===dspId);
+    const myRTO=S.timeOff.filter(t=>t.staffId===dspId);
+    return`
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.9rem;margin-bottom:0.9rem">
+      <div class="metric"><div class="metric-val" style="color:${ac?'#0F6E56':'#1a3a5c'}">${ac?'In':'Off'}</div><div class="metric-lbl">Clock Status</div></div>
+      <div class="metric"><div class="metric-val">${upcomingShifts.length}</div><div class="metric-lbl">Shifts This Week</div></div>
+      <div class="metric"><div class="metric-val">${pct}%</div><div class="metric-lbl">Training</div></div>
+    </div>
+
+    <div class="g2">
+      <!-- Clock in/out card -->
+      <div class="card ${ac?(blocked?'clock-card blocked':'clock-card in'):'clock-card'}">
+        <div class="card-title">${ac?(blocked?'⚠ Report Required to Clock Out':'✓ Currently Clocked In'):'Clock Status'}</div>
+        ${ac?`
+          <div style="font-size:13px;font-weight:600;margin-bottom:4px">${dsp?.name}</div>
+          <div style="font-size:12px;color:#666;margin-bottom:3px">Clocked in at <strong>${ac.clockIn}</strong></div>
+          <div style="font-size:12px;color:#666;margin-bottom:3px">Shift: ${ac.shift||'—'} · ${ac.location}</div>
+          <div style="font-size:12px;color:#666;margin-bottom:0.9rem">Date: ${ac.date}</div>
+          ${blocked?`<div class="alert a-err" style="margin-bottom:0.75rem;font-size:12px">You must submit a shift report before you can clock out.</div>
+          <button class="btn btn-primary" style="width:100%;margin-bottom:6px" onclick="S.prefillStaff=${dspId};om('shiftReport')">Submit Shift Report</button>`:''}
+          <button class="${hasRpt?'btn btn-danger':'btn btn-disabled'}" style="width:100%;font-size:13px;padding:8px" ${!hasRpt?'disabled':''} onclick="${hasRpt?`clockOut(${dspId})`:''}" >Clock Out</button>`
+        :`
+          <div style="font-size:12px;color:#666;margin-bottom:0.9rem">You are not currently clocked in. Select your shift below to clock in.</div>
+          ${upcomingShifts.length>0?`
+            <div class="fg"><label class="fl">Select Shift</label><select class="fi" id="dspShiftSel">
+              ${upcomingShifts.map(sh=>`<option value="${sh.day}|${sh.startTime}|${sh.endTime}|${sh.location}">${sh.day} ${sh.startTime}–${sh.endTime} @ ${sh.location}${sh.label?' ('+sh.label+')':''}</option>`).join('')}
+            </select></div>
+            <button class="btn btn-success" style="width:100%;font-size:13px;padding:8px" onclick="
+              const v=document.getElementById('dspShiftSel')?.value||'';
+              const parts=v.split('|');
+              if(parts.length>=4){
+                const shiftLabel=parts[1]+'-'+parts[2];
+                clockIn(${dspId},shiftLabel,parts[3]);
+              }
+              const _v=document.getElementById('dspShiftSel')?.value||'';
+              const _parts=_v.split('|');
+              if(_parts.length>=4){
+                const _shiftStr=_parts[1]+'-'+_parts[2];
+                const _err=canClockIn(_shiftStr);
+                if(_err){alert(_err);return;}
+                clockIn(${dspId},_shiftStr,_parts[3]);
+              }
+            ">Clock In to Selected Shift</button>`
+          :`<div class="alert a-warn" style="font-size:12px">No shifts scheduled this week. Contact your manager if this is incorrect.</div>`}
+        `}
+      </div>
+
+      <!-- Upcoming shifts -->
+      <div class="card">
+        <div class="card-title">📅 My Schedule This Week</div>
+        ${upcomingShifts.length===0?`<div style="font-size:12px;color:#aaa">No shifts scheduled this week.</div>`:''}
+        ${upcomingShifts.map(sh=>{
+          const rto=getRTO(dspId,sh.day);
+          const creator=gs(sh.createdBy);
+          const isActive=ac&&ac.location===sh.location;
+          return`<div style="border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:0.75rem;margin-bottom:0.65rem;${isActive?'border-left:3px solid #0F6E56;background:#F0FBF7':''}">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+              <div style="font-size:13px;font-weight:600">${sh.day}</div>
+              ${rto?`<span class="badge bw" style="font-size:10px">🏖 Time Off</span>`:isActive?`<span class="badge bt" style="font-size:10px">Active</span>`:''}
+            </div>
+            <div style="font-size:12px;color:#555">${sh.startTime} – ${sh.endTime}${sh.label?' · '+sh.label:''}</div>
+            <div style="font-size:11px;color:#888;margin-top:2px">📍 ${sh.location} · Added by ${creator?creator.name:'—'}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+
+    <div class="g2">
+      <!-- Recent shift reports -->
+      <div class="card">
+        <div class="card-title">📄 My Recent Shift Reports</div>
+        ${myReports.length===0?`<div style="font-size:12px;color:#aaa">No shift reports submitted yet.</div>`:''}
+        ${myReports.slice(-3).reverse().map(r=>`
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);font-size:12px">
+            <div><div style="font-weight:600">${r.date} · ${r.location}</div>
+              <div style="font-size:11px;color:#666">${r.shift||'—'} · Mood: ${r.mood} · ${(r.clientReports||[]).length} client(s)</div>
+            </div>
+            <span class="badge ${r.incidents?'bd':'bs'}" style="font-size:10px;align-self:flex-start">${r.incidents?'Incident':'No incidents'}</span>
+          </div>`).join('')}
+        <button class="btn" style="width:100%;margin-top:0.75rem;font-size:12px" onclick="S.prefillStaff=null;om('shiftReport')">+ New Shift Report</button>
+      </div>
+
+      <!-- Training & time-off -->
+      <div class="card">
+        <div class="card-title">📊 My Status</div>
+        <div class="dr"><span class="dl">Training Progress</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="pb" style="width:80px"><div class="pf" style="width:${pct}%"></div></div>
+            <span class="badge ${pct===100?'bs':'bw'}" style="font-size:10px">${pct===100?'Certified':pct+'%'}</span>
+          </div>
+        </div>
+        <div class="dr"><span class="dl">Time Off Requests</span><span>${myRTO.length} total · ${myRTO.filter(t=>t.status==='Pending').length} pending</span></div>
+        <div class="dr"><span class="dl">Shift Reports Filed</span><span>${myReports.length}</span></div>
+        ${pct<100?`<div class="alert a-warn" style="margin-top:0.75rem;font-size:11px">Training incomplete. Go to Training to finish your modules.</div>`:''}
+        <div style="display:flex;gap:7px;margin-top:0.9rem;flex-wrap:wrap">
+          <button class="btn" style="font-size:11px;flex:1" onclick="nav('training')">📚 My Training</button>
+          <button class="btn" style="font-size:11px;flex:1" onclick="om('timeOff')">✈ Request Time Off</button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // ── ADMIN / MANAGER DASHBOARD ──────────────────────────
+  const clocked=Object.keys(S.activeClock).length;
+  const pending=S.timeOff.filter(t=>t.status==='Pending').length;
+  const openInc=S.incidents.filter(i=>i.status!=='Resolved').length;
+  const trainDone=S.staff.filter(s=>tp(s.id).pct===100).length;
+  const pendingReqs=S.scheduleRequests.filter(r=>r.status==='Pending').length;
+  return`
+  <div class="g4" style="margin-bottom:0.9rem">
+    <div class="metric"><div class="metric-val">${S.staff.length}</div><div class="metric-lbl">Total Staff</div></div>
+    <div class="metric"><div class="metric-val" style="color:#0F6E56">${clocked}</div><div class="metric-lbl">Clocked In Now</div></div>
+    <div class="metric"><div class="metric-val">${pending}</div><div class="metric-lbl">Time-Off Pending</div></div>
+    <div class="metric"><div class="metric-val">${trainDone}/${S.staff.length}</div><div class="metric-lbl">Training Complete</div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Alerts</div>
+      ${openInc>0?`<div class="alert a-err">${openInc} open incident(s) require follow-up</div>`:''}
+      ${pending>0?`<div class="alert a-warn">${pending} time-off request(s) awaiting approval</div>`:''}
+      ${pendingReqs>0&&isAdmin()?`<div class="alert a-warn">${pendingReqs} schedule change request(s) need your approval</div>`:''}
+      ${(()=>{const rtoThisWeek=S.timeOff.filter(t=>t.status==='Approved'&&days.some(d=>getRTO(t.staffId,d)));return rtoThisWeek.length>0?`<div class="alert a-warn"><strong>Time Off This Week:</strong> ${rtoThisWeek.map(t=>{const s=gs(t.staffId);return(s?s.name.split(' ')[0]:'?')+' ('+t.type+' '+t.start+(t.end!==t.start?' – '+t.end:'')+')';}).join(', ')} — blocked from scheduling</div>`:''})()}
+      ${S.staff.filter(s=>tp(s.id).pct<100).length>0?`<div class="alert a-warn">${S.staff.filter(s=>tp(s.id).pct<100).length} staff with incomplete training</div>`:''}
+      <div class="alert a-ok">All medication logs current</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Live Clock Status</div>
+      ${S.staff.filter(s=>s.role!=='Admin').map(s=>{
+        const ac=S.activeClock[s.id];
+        return`<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:0.5px solid rgba(0,0,0,0.07);font-size:12px">
+          <div style="display:flex;align-items:center;gap:7px"><div class="avatar" style="width:24px;height:24px;font-size:10px">${ini(s.name)}</div>${s.name.split(' ')[0]}</div>
+          ${ac?`<span class="badge bt">In ${ac.clockIn} · ${ac.location}</span>`:'<span style="font-size:11px;color:#aaa">Off</span>'}
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+  ${isAdmin()&&pendingReqs>0?`<div class="card">
+    <div class="card-title">Schedule Change Requests — Pending Approval</div>
+    ${S.scheduleRequests.filter(r=>r.status==='Pending').map(r=>{
+      const st2=gs(r.staffId),mgr=gs(r.requestedBy);
+      return`<div class="approval-item">
+        <div style="font-size:12px;font-weight:600;margin-bottom:3px">${mgr?mgr.name:''} → ${st2?st2.name:''} · ${r.day} ${r.startTime||''}–${r.endTime||''} ${r.label?'('+r.label+')':''} @ ${r.location}</div>
+        <div style="font-size:11px;color:#854F0B;margin-bottom:7px">${r.reason||'No reason given'}</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-success" style="font-size:11px" onclick="approveSchedReq(${r.id})">Approve</button>
+          <button class="btn btn-danger" style="font-size:11px" onclick="const _dr=S.scheduleRequests.find(x=>x.id===${r.id});if(_dr){_dr.status='Denied';audit('Schedule','Schedule Change Denied',(gs(_dr.staffId)?.name||'?')+' · '+_dr.day+' @ '+_dr.location)}render()">Deny</button>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`:''}`;
+}
+
+function renderTimeclock(){
+  // DSPs only see their own clock card
+  const staffToShow = S.role==='dsp'
+    ? S.staff.filter(s=>s.id===5)   // demo: Devon Park is the DSP
+    : S.staff.filter(s=>s.role!=='Admin');
+
+  return`
+  <div class="alert a-info" style="margin-bottom:0.9rem">${S.role==='dsp'?'Submit a shift report before clocking out.':'Staff must submit a shift report before clocking out.'}</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:0.9rem;margin-bottom:1.2rem">
+    ${staffToShow.map(s=>{
+      const ac=S.activeClock[s.id];
+      const hasRpt=ac&&S.shiftReports.some(r=>r.staffId===s.id&&r.date===ac.date&&r.shift===ac.shift);
+      const blocked=ac&&!hasRpt;
+      // Get upcoming shifts for clock-in dropdown
+      const upcomingShifts=[];
+      days.forEach(d=>{
+        const dayData=S.schedule[s.id]&&S.schedule[s.id][d];
+        if(!dayData)return;
+        const shifts=Array.isArray(dayData)?dayData:[dayData];
+        shifts.forEach(sh=>upcomingShifts.push({day:d,...sh}));
+      });
+      return`<div class="clock-card ${ac?(blocked?'blocked':'in'):''}">
+        <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:${ac?(blocked?'#A32D2D':'#0F6E56'):'#aaa'};margin-bottom:6px">${ac?(blocked?'Report required':'Clocked in'):'Off duty'}</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div class="avatar" style="width:36px;height:36px;font-size:13px">${ini(s.name)}</div>
+          <div><div style="font-size:13px;font-weight:600">${s.name}</div><div style="font-size:11px;color:#666">${s.role} · ${s.location}</div></div>
+        </div>
+        ${ac?`
+          <div style="font-size:11px;color:#666;margin-bottom:8px">
+            Clocked in: <strong>${ac.clockIn}</strong><br>
+            Shift: ${ac.shift||'—'} · ${ac.location}
+          </div>
+          ${blocked?`<div class="alert a-err" style="margin-bottom:8px;font-size:11px">Submit a shift report to unlock clock-out.</div>
+          <button class="btn btn-primary" style="font-size:11px;width:100%;margin-bottom:6px" onclick="S.prefillStaff=${s.id};om('shiftReport')">Submit Shift Report</button>`:''}
+          <button class="${hasRpt?'btn btn-danger':'btn btn-disabled'}" style="font-size:11px;width:100%" ${!hasRpt?'disabled':''} onclick="${hasRpt?`clockOut(${s.id})`:''}" >Clock Out</button>`
+        :`
+          ${upcomingShifts.length>0?`
+            <div class="fg" style="margin-bottom:8px"><label class="fl">Select shift to clock in</label>
+              <select class="fi" id="shiftSel_${s.id}">
+                ${upcomingShifts.map(sh=>`<option value="${sh.startTime}|${sh.endTime}|${sh.location}">${sh.day} ${sh.startTime}–${sh.endTime} @ ${sh.location}${sh.label?' ('+sh.label+')':''}</option>`).join('')}
+              </select>
+            </div>
+            <button class="btn btn-success" style="font-size:11px;width:100%" onclick="
+              const sel=document.getElementById('shiftSel_${s.id}');
+              const parts=(sel?.value||'').split('|');
+              if(parts.length>=3)clockIn(${s.id},parts[0]+'-'+parts[1],parts[2]);
+              else{S.clockInStaffId=${s.id};om('clockIn');}
+            ">Clock In</button>`
+          :`<div style="font-size:11px;color:#aaa;margin-bottom:8px">No scheduled shifts this week.</div>
+           <button class="btn btn-success" style="font-size:11px;width:100%" onclick="S.clockInStaffId=${s.id};om('clockIn')">Clock In Manually</button>`}
+        `}
+      </div>`;
+    }).join('')}
+  </div>
+  ${S.role!=='dsp'?`<div class="card">
+    <div class="card-title">All Clock Records</div>
+    <table><tr><th>Staff</th><th>Date</th><th>Shift</th><th>Location</th><th>In</th><th>Out</th><th>Hours</th><th>Report</th></tr>
+    ${S.clockRecords.map(r=>{const s=gs(r.staffId);let hrs='—';
+      if(r.clockIn&&r.clockOut){const[ih,im]=r.clockIn.split(':').map(Number);const[oh,om2]=r.clockOut.split(':').map(Number);hrs=((oh*60+om2-ih*60-im)/60).toFixed(1)+'h';}
+      return`<tr><td>${s?s.name:'—'}</td><td>${r.date}</td><td>${r.shift}</td><td>${r.location}</td><td>${r.clockIn}</td><td>${r.clockOut||'<span style="color:#0F6E56;font-weight:600">Active</span>'}</td><td>${hrs}</td><td><span class="badge ${r.reportSubmitted?'bs':'bw'}">${r.reportSubmitted?'Filed':'Pending'}</span></td></tr>`;
+    }).join('')}</table>
+  </div>`:`<div class="card">
+    <div class="card-title">My Clock History</div>
+    <table><tr><th>Date</th><th>Shift</th><th>Location</th><th>In</th><th>Out</th><th>Hours</th><th>Report</th></tr>
+    ${S.clockRecords.filter(r=>r.staffId===5).map(r=>{let hrs='—';
+      if(r.clockIn&&r.clockOut){const[ih,im]=r.clockIn.split(':').map(Number);const[oh,om2]=r.clockOut.split(':').map(Number);hrs=((oh*60+om2-ih*60-im)/60).toFixed(1)+'h';}
+      return`<tr><td>${r.date}</td><td>${r.shift}</td><td>${r.location}</td><td>${r.clockIn}</td><td>${r.clockOut||'<span style="color:#0F6E56;font-weight:600">Active</span>'}</td><td>${hrs}</td><td><span class="badge ${r.reportSubmitted?'bs':'bw'}">${r.reportSubmitted?'Filed':'Pending'}</span></td></tr>`;
+    }).join('')}</table>
+  </div>`}`;
+}
+
+function renderStaff(){
+  const canEdit=isAdmin();
+  return`
+  <div class="sec-hdr">
+    <div style="font-size:12px;color:#666">${S.staff.length} staff members</div>
+    ${canEdit?`<button class="btn btn-primary" onclick="om('addStaff')">+ Add Staff</button>`:''}
+  </div>
+  ${!canEdit?`<div class="read-only-banner">👁 You have read-only access to staff records.</div>`:''}
+  <div class="card">
+    <table><tr><th>Name</th><th>Role</th><th>Location</th><th>Date of Hire</th><th>Training</th><th>Docs</th><th>Clock</th><th></th></tr>
+    ${S.staff.map(s=>{const{pct}=tp(s.id);const ac=S.activeClock[s.id];
+      return`<tr>
+        <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar">${ini(s.name)}</div><div><div style="font-weight:600;font-size:12px">${s.name}</div><div style="font-size:10px;color:#aaa">${s.email}</div></div></div></td>
+        <td>${s.role}</td><td>${s.location}</td><td style="font-size:11px">${s.startDate||'—'}</td>
+        <td><div style="min-width:70px"><div style="font-size:10px;margin-bottom:2px">${pct}% ${pct===100?'✓':''}</div><div class="pb"><div class="pf" style="width:${pct}%"></div></div></div></td>
+        <td style="font-size:11px">${(s.docs||[]).length}</td>
+        <td>${ac?`<span class="badge bt">In</span>`:'<span class="badge bg">Off</span>'}</td>
+        <td style="white-space:nowrap"><button class="btn" onclick="S.viewStaffId=${s.id};om('viewStaff')" style="font-size:11px;padding:3px 8px">View</button>${isAdmin()?`<button class="btn" onclick="S.modalCtx={staffId:${s.id}};om('pwReset')" style="font-size:11px;padding:3px 8px;margin-left:4px;color:#185FA5;border-color:#B5D4F4">🔑 Reset PW</button>`:''}</td>
+      </tr>`;
+    }).join('')}</table>
+  </div>`;
+}
+
+function renderClients(){
+  const canEdit=isAdmin();
+  return`
+  <div class="sec-hdr">
+    <div style="font-size:12px;color:#666">${S.clients.length} clients</div>
+    ${canEdit?`<button class="btn btn-primary" onclick="om('addClient')">+ Add Client</button>`:''}
+  </div>
+  <div class="g2">
+    ${S.clients.map(c=>`
+      <div class="card" style="cursor:pointer" onclick="S.viewClientId=${c.id};om('viewClient')">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.9rem">
+          <div class="avatar" style="width:40px;height:40px;font-size:14px">${ini(c.name)}</div>
+          <div><div style="font-weight:600;font-size:14px">${c.name}</div><div style="font-size:11px;color:#666">${c.dx}</div></div>
+          <span class="badge bs" style="margin-left:auto">${c.status}</span>
+        </div>
+        <div class="dr"><span class="dl">Location</span><span>${c.location}</span></div>
+        <div class="dr"><span class="dl">Physician</span><span>${c.primary}</span></div>
+        <div class="dr"><span class="dl">Guardian</span><span style="font-size:11px">${c.guardian}</span></div>
+        <div style="margin-top:8px;font-size:11px;color:#888">${(c.docs||[]).length} document(s) · ${c.notes.slice(0,60)}...</div>
+      </div>`).join('')}
+  </div>`;
+}
+
+function renderSchedule(){
+  const mgrLocs=getMgrLocs();
+  const pendingReqs=S.scheduleRequests.filter(r=>r.status==='Pending').length;
+  return`
+  <div class="sec-hdr">
+    <div style="font-size:12px;color:#666">Week of Apr 14–20, 2026${S.role==='manager'?' · Managing: '+mgrLocs.join(', '):''}</div>
+    <div style="display:flex;gap:7px">
+      ${S.role==='dsp'?'<span style="font-size:11px;color:#aaa;align-self:center">View only</span>':''}
+      ${isMgr()?`<button class="btn" onclick="om('timeOff')">Time Off Request</button><button class="btn btn-primary" onclick="om('addShift')">+ Add Shift</button>`:''}
+    </div>
+  </div>
+  ${S.role==='dsp'?`<div class="read-only-banner">👁 You can view the full schedule but cannot make changes.</div>`:''}
+  ${isMgr()?`${(()=>{const approvedRTO=S.timeOff.filter(t=>t.status==='Approved'&&days.some(d=>getRTO(t.staffId,d)));return approvedRTO.length>0?`<div class="alert a-warn" style="margin-bottom:0.9rem"><strong>Approved Time Off This Week:</strong> ${approvedRTO.map(t=>{const s=gs(t.staffId);return(s?s.name:'?')+' · '+t.type+' '+t.start+(t.end!==t.start?' – '+t.end:'');}).join(' &nbsp;|&nbsp; ')} — These days are blocked from scheduling.</div>`:''})()}`:``}
+  <div class="card" style="overflow-x:auto">
+    <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;flex-wrap:wrap">
+      <span><span style="background:#185FA5;width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:3px"></span>Morning</span>
+      <span><span style="background:#3B6D11;width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:3px"></span>Evening</span>
+      <span><span style="background:#4B1528;width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:3px"></span>Night</span>
+      <span><span style="background:#5F5E5A;width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:3px"></span>Admin</span>
+      <span><span style="background:#7B3F00;width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:3px"></span>Approved Time Off</span>
+      <span style="color:#666;font-size:10px">Hover shifts to see creator</span>
+    </div>
+    <div class="sched-wrap">
+      <div class="sh">Staff</div>${days.map(d=>`<div class="sh">${d}</div>`).join('')}
+      ${S.staff.filter(s=>s.role!=='Admin').map(s=>`
+        <div class="sc" style="font-weight:600;font-size:11px;color:#666;display:flex;align-items:center;padding:4px 6px">${s.name.split(' ')[0]}</div>
+        ${days.map(d=>{
+          const rto=getRTO(s.id,d);
+          const dayData=S.schedule[s.id]&&S.schedule[s.id][d];
+          const shifts=dayData?(Array.isArray(dayData)?dayData:[dayData]):[];
+          const rtoBlock=rto?`<div class="ss rto" title="Approved Time Off: ${rto.type} ${rto.start}${rto.end!==rto.start?' – '+rto.end:''}">🏖 Off<div style="font-size:9px;opacity:0.9">${rto.type}</div></div>`:'';
+          const shiftBlocks=shifts.map(blk=>{
+            const creator=gs(blk.createdBy);
+            const sc=blk.label&&blk.label.toLowerCase().includes('admin')?'a':toMin(blk.startTime)<12*60?'m':toMin(blk.startTime)<18*60?'e':'n';
+            return`<div class="ss ${sc}" title="Created by: ${creator?creator.name:'Unknown'}${blk.finalized?' · Finalized':' · Draft'} · ${blk.location}">${blk.startTime}–${blk.endTime}${blk.label?'<br>'+blk.label:''}<div style="font-size:9px;opacity:0.85">${blk.location}</div><div style="font-size:9px;opacity:0.7">${creator?creator.name.split(' ')[0]:''}</div></div>`;
+          }).join('');
+          return`<div class="sc ${rto?'rto-cell':''}">${rtoBlock}${shiftBlocks}</div>`;
+        }).join('')}`).join('')}
+    </div>
+  </div>
+  ${isAdmin()&&pendingReqs>0?`<div class="card">
+    <div class="card-title">Pending Schedule Change Requests</div>
+    ${S.scheduleRequests.filter(r=>r.status==='Pending').map(r=>{const st2=gs(r.staffId),mgr=gs(r.requestedBy);return`<div class="approval-item">
+      <div style="font-size:12px;font-weight:600">${mgr?mgr.name:''} → ${st2?st2.name:''} · ${r.day} ${r.startTime||''}–${r.endTime||''} ${r.label?'('+r.label+')':''} @ ${r.location}</div>
+      <div style="font-size:11px;color:#854F0B;margin:3px 0 8px">${r.reason||''}</div>
+      <div style="display:flex;gap:6px"><button class="btn btn-success" style="font-size:11px" onclick="approveSchedReq(${r.id})">Approve</button><button class="btn btn-danger" style="font-size:11px" onclick="const _dr=S.scheduleRequests.find(x=>x.id===${r.id});if(_dr){_dr.status='Denied';audit('Schedule','Schedule Change Denied',(gs(_dr.staffId)?.name||'?')+' · '+_dr.day+' '+(_dr.startTime||'')+'-'+(_dr.endTime||'')+' @ '+_dr.location+' (req by '+(gs(_dr.requestedBy)?.name||'?')+')')}render()">Deny</button></div>
+    </div>`;}).join('')}
+  </div>`:''}
+  <div class="card">
+    <div class="card-title">Time Off Requests</div>
+    <table><tr><th>Staff</th><th>Type</th><th>Dates</th><th>Reason</th><th>Status</th><th></th></tr>
+    ${S.timeOff.map(t=>{const s=gs(t.staffId);return`<tr>
+      <td>${s?s.name:'—'}</td><td>${t.type}</td><td>${t.start}${t.end!==t.start?' – '+t.end:''}</td>
+      <td style="color:#666">${t.reason}</td>
+      <td><span class="badge ${t.status==='Approved'?'bs':t.status==='Denied'?'bd':'bw'}">${t.status}</span></td>
+      <td>${t.status==='Pending'&&isMgr()?`<button class="btn btn-success" style="font-size:11px;padding:3px 7px" onclick="const _to=S.timeOff.find(x=>x.id==${t.id});if(_to){_to.status='Approved';audit('Time Off','Time Off Approved',(gs(_to.staffId)?.name||'?')+' · '+_to.type+' '+_to.start+' – '+_to.end)}render()">Approve</button>`:'—'}</td>
+    </tr>`;}).join('')}</table>
+  </div>`;
+}
+
+function renderReports(){
+  const readOnly=S.role==='manager';
+  const tabs=['Shift Reports','Incident Reports'];
+  return`
+  <div class="tabs">${tabs.map((t,i)=>`<button class="tab ${S.tab===i?'active':''}" onclick="st(${i})">${t}</button>`).join('')}</div>
+  ${readOnly?`<div class="read-only-banner">👁 Managers can view reports but cannot create or edit them.</div>`:''}
+  ${S.tab===0?`
+    <div class="sec-hdr">
+      <div style="font-size:12px;color:#666">${S.shiftReports.length} reports</div>
+      ${!readOnly?`<button class="btn btn-primary" onclick="S.prefillStaff=null;om('shiftReport')">+ New Shift Report</button>`:''}
+    </div>
+    <div class="card">
+      <table><tr><th>Date</th><th>Staff</th><th>Shift</th><th>Location</th><th>Clients Reported</th><th>Incidents</th><th></th></tr>
+      ${S.shiftReports.map(r=>{const s=gs(r.staffId);return`<tr>
+        <td>${r.date}</td><td>${s?s.name:'—'}</td><td>${r.shift}</td><td>${r.location}</td>
+        <td>${(r.clientReports||[]).length} clients</td>
+        <td><span class="badge ${r.incidents?'bd':'bs'}">${r.incidents?'Yes':'None'}</span></td>
+        <td><button class="btn" onclick="S.viewReportId=${r.id};om('viewReport')" style="font-size:11px;padding:3px 7px">View</button></td>
+      </tr>`;}).join('')}</table>
+    </div>`:`
+    <div class="sec-hdr">
+      <div style="font-size:12px;color:#666">${S.incidents.length} incidents</div>
+      ${!readOnly?`<button class="btn btn-primary" onclick="om('incidentReport')">+ New Incident</button>`:''}
+    </div>
+    <div class="card">
+      <table><tr><th>Date</th><th>Staff</th><th>Client</th><th>Type</th><th>Severity</th><th>SC Notified</th><th>Mgr Notified</th><th>Status</th><th></th></tr>
+      ${S.incidents.map(i=>{const s=gs(i.staffId),c=gc(i.clientId);return`<tr>
+        <td>${i.date}</td><td>${s?s.name:'—'}</td><td>${c?c.name:'—'}</td><td>${i.type}</td>
+        <td><span class="badge ${i.severity==='Minor'?'bw':'bd'}">${i.severity}</span></td>
+        <td><span class="badge ${i.notifications?.supportCoord?.notified?'bs':'bw'}">${i.notifications?.supportCoord?.notified?'Yes':'No'}</span></td>
+        <td><span class="badge ${i.notifications?.manager?.notified?'bs':'bw'}">${i.notifications?.manager?.notified?'Yes':'No'}</span></td>
+        <td><span class="badge ${i.status==='Resolved'?'bs':'bw'}">${i.status}</span></td>
+        <td><button class="btn" onclick="S.viewIncId=${i.id};om('viewInc')" style="font-size:11px;padding:3px 7px">View</button></td>
+      </tr>`;}).join('')}</table>
+    </div>`}`;
+}
+
+function renderTraining(){
+  if(S.currentTrainStaff){
+    const stf=gs(S.currentTrainStaff);
+    const prog=S.trainingProgress[S.currentTrainStaff]||{completedModules:[],signedPP:false,signedFinal:false};
+    const allModsDone=prog.completedModules.length===6;
+    if(S.modal==='quiz'){
+      const mod=TM[S.currentModuleIdx];const sub=S.quizSubmitted;
+      const allOk=sub&&mod.questions.every((q,i)=>S.quizAnswers[i]===q.ans);
+      return`<button class="btn" onclick="S.modal=null;render()">← Back</button>
+        <div class="card" style="margin-top:0.9rem">
+          <div style="font-size:15px;font-weight:600;margin-bottom:4px">Quiz: ${mod.title}</div>
+          <div style="font-size:12px;color:#666;margin-bottom:1.2rem">Answer all correctly to complete this module.</div>
+          ${mod.questions.map((q,qi)=>{const sel=S.quizAnswers[qi];return`<div style="margin-bottom:1rem">
+            <div style="font-size:12px;font-weight:600;margin-bottom:6px">${qi+1}. ${q.q}</div>
+            ${q.opts.map((o,oi)=>`<label style="display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:6px;cursor:pointer;font-size:12px;${sub&&oi===q.ans?'background:#EAF3DE':sub&&oi===sel&&oi!==q.ans?'background:#FCEBEB':''}">
+              <input type="radio" name="q${qi}" ${sel===oi?'checked':''} ${sub?'disabled':''} onchange="S.quizAnswers[${qi}]=${oi};render()"> ${o}</label>`).join('')}
+          </div>`;}).join('')}
+          ${sub?(allOk?`<div class="alert a-ok">All correct! Module complete.</div><button class="btn btn-primary" onclick="const p=S.trainingProgress[S.currentTrainStaff];if(!p.completedModules.includes(${TM[S.currentModuleIdx].id}))p.completedModules.push(${TM[S.currentModuleIdx].id});const _mod=TM[S.currentModuleIdx];audit('Training','Module Completed',(gs(S.currentTrainStaff)?.name||'?')+' · Module '+_mod.id+': '+_mod.title);S.modal=null;S.quizAnswers={};S.quizSubmitted=false;render()">Complete Module</button>`:
+          `<div class="alert a-err">Some answers incorrect. Try again.</div><button class="btn btn-primary" onclick="S.quizAnswers={};S.quizSubmitted=false;render()">Retry Quiz</button>`):
+          `<button class="btn btn-primary" onclick="S.quizSubmitted=true;render()">Submit Quiz</button>`}
+        </div>`;
+    }
+    return`
+      <button class="btn" onclick="S.currentTrainStaff=null;render()">← All Staff</button>
+      <div class="card" style="margin-top:0.9rem">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.1rem">
+          <div class="avatar" style="width:42px;height:42px;font-size:15px">${ini(stf.name)}</div>
+          <div><div style="font-size:15px;font-weight:600">${stf.name}</div>
+            <div style="font-size:12px;color:#666">Progress: ${tp(S.currentTrainStaff).pct}%</div>
+            <div class="pb" style="width:160px;margin-top:3px"><div class="pf" style="width:${tp(S.currentTrainStaff).pct}%"></div></div>
+          </div>
+        </div>
+        ${TM.map((mod,idx)=>{const done=prog.completedModules.includes(mod.id);return`<div style="border:0.5px solid rgba(0,0,0,0.1);border-left:${done?'3px solid #639922':'3px solid rgba(0,0,0,0.1)'};border-radius:7px;padding:0.9rem;margin-bottom:0.65rem;display:flex;align-items:center;justify-content:space-between">
+          <div><div style="font-size:12px;font-weight:600">Module ${mod.id}: ${mod.title}</div></div>
+          ${done?'<span class="badge bs">Complete</span>':`<button class="btn btn-primary" style="font-size:11px" onclick="S.currentModuleIdx=${idx};S.quizAnswers={};S.quizSubmitted=false;S.modal='quiz';render()">Start</button>`}
+        </div>`;}).join('')}
+        <hr>
+        <div style="font-size:13px;font-weight:600;margin-bottom:0.9rem">Policies & Procedures Manual</div>
+        <div style="border:0.5px solid rgba(0,0,0,0.1);border-left:${prog.signedPP?'3px solid #639922':'3px solid rgba(0,0,0,0.1)'};border-radius:7px;padding:0.9rem;margin-bottom:0.65rem;display:flex;align-items:center;justify-content:space-between">
+          <div><div style="font-size:12px;font-weight:600">Read & Sign P&P Manual</div><div style="font-size:11px;color:#666">Must complete all modules first</div></div>
+          ${prog.signedPP?'<span class="badge bs">Signed</span>':(allModsDone?`<button class="btn btn-primary" style="font-size:11px" onclick="om('signPP')">Review & Sign</button>`:'<span class="badge bg">Locked</span>')}
+        </div>
+        ${prog.signedPP?`<div style="border:0.5px solid rgba(0,0,0,0.1);border-left:${prog.signedFinal?'3px solid #639922':'3px solid rgba(0,0,0,0.1)'};border-radius:7px;padding:0.9rem;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:12px;font-weight:600">Final Comprehensive Acknowledgment</div>
+          ${prog.signedFinal?'<span class="badge bs">Signed</span>':`<button class="btn btn-primary" style="font-size:11px" onclick="om('signFinal')">Sign</button>`}
+        </div>`:''}
+        ${tp(S.currentTrainStaff).pct===100?'<div class="alert a-ok" style="margin-top:0.9rem">Training fully complete. All records saved.</div>':''}
+      </div>`;
+  }
+  const canManage=isAdmin();
+  return`
+    <div class="sec-hdr"><div style="font-size:12px;color:#666">Select a staff member to manage training</div></div>
+    ${!canManage?`<div class="read-only-banner">👁 Only admins can manage training records.</div>`:''}
+    <div class="g2">${S.staff.map(s=>{const{pct}=tp(s.id);return`<div class="card" style="cursor:${canManage?'pointer':'default'}" onclick="${canManage?`S.currentTrainStaff=${s.id};render()`:''}" >
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.9rem">
+        <div class="avatar" style="width:40px;height:40px;font-size:14px">${ini(s.name)}</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:600">${s.name}</div><div style="font-size:11px;color:#666">${s.role}</div></div>
+        <span class="badge ${pct===100?'bs':'bw'}">${pct}%</span>
+      </div>
+      <div class="pb"><div class="pf" style="width:${pct}%"></div></div>
+      <div style="font-size:11px;color:#888;margin-top:5px">${(S.trainingProgress[s.id]||{completedModules:[]}).completedModules.length}/6 modules · ${pct===100?'Certified':'In progress'}</div>
+    </div>`;}).join('')}</div>`;
+}
+
+function renderAdminConfig(){
+  if(!isAdmin())return`<div class="card"><div class="alert a-err">This section is only accessible to Admin.</div></div>`;
+  return`
+  <div class="alert a-info" style="margin-bottom:0.9rem">This section is only visible and editable by you. Add or remove roles, locations, shift types, incident types, and assign managers to locations.</div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Location → Manager Assignments</div>
+      ${Object.keys(S.locationManagers).map(loc=>{const mgr=gs(S.locationManagers[loc]);return`<div class="dr"><span class="dl">${loc}</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:12px">${mgr?mgr.name:'Unassigned'}</span>
+          <button class="btn" style="font-size:10px;padding:2px 7px" onclick="S.modalCtx={loc:'${loc}'};om('assignMgr')">Change</button>
+        </div>
+      </div>`;}).join('')}
+    </div>
+    <div class="card">
+      <div class="card-title">Incident Types</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${S.adminConfig.incidentTypes.map((t,i)=>`<span class="pill on">${t} <span style="cursor:pointer;margin-left:3px;color:#A32D2D" onclick="S.adminConfig.incidentTypes.splice(${i},1);render()">×</span></span>`).join('')}</div>
+      <div style="display:flex;gap:5px"><input class="fi" id="addIT" placeholder="Add incident type..." style="flex:1"><button class="btn btn-primary" style="font-size:11px" onclick="const v=document.getElementById('addIT').value.trim();if(v&&!S.adminConfig.incidentTypes.includes(v)){S.adminConfig.incidentTypes.push(v);document.getElementById('addIT').value='';render()}">Add</button></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Staff Roles</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${S.adminConfig.roles.map((r,i)=>`<span class="pill on">${r} <span style="cursor:pointer;margin-left:3px;color:#A32D2D" onclick="S.adminConfig.roles.splice(${i},1);render()">×</span></span>`).join('')}</div>
+      <div style="display:flex;gap:5px"><input class="fi" id="addRole" placeholder="Add role..." style="flex:1"><button class="btn btn-primary" style="font-size:11px" onclick="const v=document.getElementById('addRole').value.trim();if(v&&!S.adminConfig.roles.includes(v)){S.adminConfig.roles.push(v);document.getElementById('addRole').value='';render()}">Add</button></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Locations</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${S.adminConfig.locations.map((l,i)=>`<span class="pill on">${l} <span style="cursor:pointer;margin-left:3px;color:#A32D2D" onclick="S.adminConfig.locations.splice(${i},1);render()">×</span></span>`).join('')}</div>
+      <div style="display:flex;gap:5px"><input class="fi" id="addLoc" placeholder="Add location..." style="flex:1"><button class="btn btn-primary" style="font-size:11px" onclick="const v=document.getElementById('addLoc').value.trim();if(v&&!S.adminConfig.locations.includes(v)){S.adminConfig.locations.push(v);document.getElementById('addLoc').value='';render()}">Add</button></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Shift Types</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${S.adminConfig.shiftTypes.map((t,i)=>`<span class="pill on">${t} <span style="cursor:pointer;margin-left:3px;color:#A32D2D" onclick="S.adminConfig.shiftTypes.splice(${i},1);render()">×</span></span>`).join('')}</div>
+      <div style="display:flex;gap:5px"><input class="fi" id="addST" placeholder="Add shift type..." style="flex:1"><button class="btn btn-primary" style="font-size:11px" onclick="const v=document.getElementById('addST').value.trim();if(v&&!S.adminConfig.shiftTypes.includes(v)){S.adminConfig.shiftTypes.push(v);document.getElementById('addST').value='';render()}">Add</button></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Incident Severities</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">${S.adminConfig.incidentSeverities.map((s,i)=>`<span class="pill on">${s} <span style="cursor:pointer;margin-left:3px;color:#A32D2D" onclick="S.adminConfig.incidentSeverities.splice(${i},1);render()">×</span></span>`).join('')}</div>
+      <div style="display:flex;gap:5px"><input class="fi" id="addSev" placeholder="Add severity..." style="flex:1"><button class="btn btn-primary" style="font-size:11px" onclick="const v=document.getElementById('addSev').value.trim();if(v&&!S.adminConfig.incidentSeverities.includes(v)){S.adminConfig.incidentSeverities.push(v);document.getElementById('addSev').value='';render()}">Add</button></div>
+    </div>
+  </div>`;
+}
+
+// ── MODALS ───────────────────────────────────────────────
+function renderModal(){
+  const m=S.modal;if(!m)return'';
+  let body='';
+
+  if(m==='blockClockOut'){const s=gs(S.clockOutStaffId);
+    body=`<div class="mt" style="color:#A32D2D">Cannot Clock Out</div>
+      <div class="alert a-err">A shift report must be submitted before ${s?s.name:'this staff member'} can clock out.</div>
+      <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+      <button class="btn btn-primary" onclick="S.prefillStaff=S.clockOutStaffId;S.modal='shiftReport';render()">Submit Shift Report Now</button></div>`;
+  }
+  else if(m==='clockIn'){const s=gs(S.clockInStaffId);
+    body=`<div class="mt">Clock In — ${s?s.name:''}</div>
+      <div class="fg"><label class="fl">Shift</label><select class="fi" id="ciS">${S.adminConfig.shiftTypes.filter(t=>t!=='Admin').map(t=>`<option>${t}</option>`).join('')}</select></div>
+      <div class="fg"><label class="fl">Location</label><select class="fi" id="ciL">${S.adminConfig.locations.map(l=>`<option>${l}</option>`).join('')}</select></div>
+      <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+      <button class="btn btn-success" onclick="clockIn(${S.clockInStaffId},document.getElementById('ciS').value,document.getElementById('ciL').value)">Clock In Now</button></div>`;
+  }
+  else if(m==='addShift'){
+    const mgrLocs=getMgrLocs();const allowedLocs=isAdmin()?S.adminConfig.locations:mgrLocs;
+    body=`<div class="mt">Add Shift</div>
+      <div class="fg"><label class="fl">Staff Member</label><select class="fi" id="ssS"><option value="">Select...</option>${S.staff.filter(s=>s.role!=='Admin').map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Day</label><select class="fi" id="ssD">${days.map(d=>`<option>${d}</option>`).join('')}</select></div>
+        <div class="fg"><label class="fl">Shift Label <span style="font-weight:400;color:#aaa">(optional)</span></label><input class="fi" id="ssLabel" placeholder="e.g. Morning, Double, Admin"></div>
+      </div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Start Time</label><input class="fi" type="time" id="ssStart"></div>
+        <div class="fg"><label class="fl">End Time</label><input class="fi" type="time" id="ssEnd"></div>
+      </div>
+      <div style="font-size:11px;color:#888;margin-bottom:0.75rem;margin-top:-0.4rem">For overnight shifts set end time past midnight — e.g. start 23:00, end 07:00.</div>
+      <div class="fg"><label class="fl">Location</label><select class="fi" id="ssL">${allowedLocs.map(l=>`<option>${l}</option>`).join('')}</select></div>
+      ${S.role==='manager'?`<div class="fg"><label class="fl">Reason (if modifying finalized schedule)</label><textarea class="fi" id="ssReason" placeholder="Reason for change..."></textarea></div>`:''}
+      <div class="alert a-info" style="font-size:11px">Double shifts are allowed. Overlap of more than 1 minute with an existing shift will be blocked.</div>
+      <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitShift()">Add Shift</button></div>`;
+  }
+  else if(m==='shiftReport'){
+    const prefill=S.prefillStaff;const ac=prefill?S.activeClock[prefill]:null;
+    const reportLoc=ac?ac.location:'Home A';
+    const clientsAtLoc=S.clients.filter(c=>c.location===reportLoc);
+    body=`<div class="mt">Shift Report</div>
+      ${prefill&&ac?`<div class="alert a-info">Active shift: ${ac.shift} at ${ac.location}. Submit this report to unlock clock-out.</div>`:''}
+      <div class="g2">
+        <div class="fg"><label class="fl">Staff Member</label><select class="fi" id="rSt" ${prefill?'disabled':''}>
+          ${S.staff.filter(s=>s.role!=='Admin').map(s=>`<option value="${s.id}" ${s.id===prefill?'selected':''}>${s.name}</option>`).join('')}
+        </select></div>
+        <div class="fg"><label class="fl">Date</label><input class="fi" type="date" id="rDt" value="${ac?ac.date:today()}"></div>
+      </div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Shift</label><select class="fi" id="rSh">
+          ${S.adminConfig.shiftTypes.filter(t=>t!=='Admin').map(t=>`<option ${ac&&ac.shift===t?'selected':''}>${t}</option>`).join('')}
+        </select></div>
+        <div class="fg"><label class="fl">Location</label><select class="fi" id="rLo">
+          ${S.adminConfig.locations.map(l=>`<option ${ac&&ac.location===l?'selected':''}>${l}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="fg"><label class="fl">Overall Shift Tone</label><select class="fi" id="rMd"><option>Good</option><option>Fair</option><option>Difficult</option></select></div>
+      <div class="fg"><label class="fl" style="display:flex;align-items:center;gap:7px"><input type="checkbox" id="rIn"> Any incidents this shift?</label></div>
+      <hr>
+      <div style="font-size:13px;font-weight:600;margin-bottom:0.75rem">Client Reports <span style="font-size:11px;font-weight:400;color:#A32D2D">— All sections required</span></div>
+      <div id="clientSections">
+        ${clientsAtLoc.length===0?`<div style="font-size:12px;color:#888;padding:1rem 0">No clients found at ${reportLoc}.</div>`:''}
+        ${clientsAtLoc.map(c=>`
+          <div class="client-section incomplete" id="cs_${c.id}">
+            <div style="font-size:12px;font-weight:600;margin-bottom:6px">${c.name} <span style="font-size:10px;color:#666;font-weight:400">${c.dx}</span></div>
+            <div class="g2">
+              <div class="fg"><label class="fl">Mood</label><select class="fi" id="cmood_${c.id}" onchange="updateClientSection(${c.id})"><option>Good</option><option>Fair</option><option>Difficult</option><option>Non-verbal</option></select></div>
+              <div class="fg"><label class="fl">Participation</label><select class="fi" id="cpart_${c.id}" onchange="updateClientSection(${c.id})"><option>Full</option><option>Partial</option><option>Refused</option><option>N/A</option></select></div>
+            </div>
+            <div class="fg"><label class="fl">Notes (required)</label><textarea class="fi" id="cnotes_${c.id}" placeholder="Describe ${c.name.split(' ')[0]}'s behavior, meals, activities, medications taken..." oninput="updateClientSection(${c.id})"></textarea></div>
+          </div>`).join('')}
+      </div>
+      <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitShiftReport(${prefill||0})">Submit Report</button></div>`;
+  }
+  else if(m==='incidentReport'){
+    body=`<div class="mt">New Incident Report</div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Staff Member</label><select class="fi" id="iSt"><option value="">Select...</option>${S.staff.map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+        <div class="fg"><label class="fl">Client Involved</label><select class="fi" id="iCl"><option value="">Select...</option>${S.clients.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}</select></div>
+      </div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Date</label><input class="fi" type="date" id="iDt" value="${today()}"></div>
+        <div class="fg"><label class="fl">Time</label><input class="fi" type="time" id="iTm"></div>
+      </div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Incident Type</label><select class="fi" id="iTy">${S.adminConfig.incidentTypes.map(t=>`<option>${t}</option>`).join('')}</select></div>
+        <div class="fg"><label class="fl">Severity</label><select class="fi" id="iSv">${S.adminConfig.incidentSeverities.map(s=>`<option>${s}</option>`).join('')}</select></div>
+      </div>
+      <div class="fg"><label class="fl">Description</label><textarea class="fi" id="iDs" placeholder="Describe what happened, what was observed, actions taken..."></textarea></div>
+      <div class="fg"><label class="fl">Follow-Up Actions</label><textarea class="fi" id="iFu" placeholder="Who was notified, steps taken, next steps needed..."></textarea></div>
+      <hr>
+      <div style="font-size:13px;font-weight:600;margin-bottom:0.9rem">Notifications</div>
+      <div class="notif-block">
+        <div style="font-size:12px;font-weight:600;margin-bottom:0.75rem">Support Coordinator</div>
+        <div class="g2">
+          <div class="fg"><label class="fl">Was support coordinator notified?</label><select class="fi" id="nScY"><option value="1">Yes</option><option value="0">No</option></select></div>
+          <div class="fg"><label class="fl">Name</label><input class="fi" id="nScN" placeholder="SC Name"></div>
+        </div>
+        <div class="g2">
+          <div class="fg"><label class="fl">Date Notified</label><input class="fi" type="date" id="nScD" value="${today()}"></div>
+          <div class="fg"><label class="fl">Time Notified</label><input class="fi" type="time" id="nScT"></div>
+        </div>
+      </div>
+      <div class="notif-block">
+        <div style="font-size:12px;font-weight:600;margin-bottom:0.75rem">Manager</div>
+        <div class="g2">
+          <div class="fg"><label class="fl">Was manager notified?</label><select class="fi" id="nMY"><option value="1">Yes</option><option value="0">No</option></select></div>
+          <div class="fg"><label class="fl">Name</label><input class="fi" id="nMN" placeholder="Manager Name"></div>
+        </div>
+        <div class="g2">
+          <div class="fg"><label class="fl">Date Notified</label><input class="fi" type="date" id="nMD" value="${today()}"></div>
+          <div class="fg"><label class="fl">Time Notified</label><input class="fi" type="time" id="nMT"></div>
+        </div>
+      </div>
+      <div style="font-size:12px;font-weight:600;margin-bottom:0.6rem">Anyone Else Notified?</div>
+      <div id="otherNotifs"></div>
+      <button class="btn" style="font-size:11px;margin-bottom:0.9rem" onclick="addOtherNotif()">+ Add Person</button>
+      <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitIncident()">Submit Incident Report</button></div>`;
+  }
+  else if(m==='viewInc'){
+    const inc=S.incidents.find(x=>x.id===S.viewIncId);if(!inc)return'';
+    const s=gs(inc.staffId),c=gc(inc.clientId),n=inc.notifications||{};
+    body=`<div class="mt">Incident Report</div>
+      <div class="dr"><span class="dl">Staff</span><span>${s?s.name:'—'}</span></div>
+      <div class="dr"><span class="dl">Client</span><span>${c?c.name:'—'}</span></div>
+      <div class="dr"><span class="dl">Date & Time</span><span>${inc.date} ${inc.time}</span></div>
+      <div class="dr"><span class="dl">Type</span><span>${inc.type}</span></div>
+      <div class="dr"><span class="dl">Severity</span><span class="badge ${inc.severity==='Minor'?'bw':'bd'}">${inc.severity}</span></div>
+      <div class="dr"><span class="dl">Status</span><span class="badge ${inc.status==='Resolved'?'bs':'bw'}">${inc.status}</span></div>
+      <div style="margin-top:0.9rem"><div class="fl">Description</div><div style="font-size:12px;margin-top:4px;line-height:1.6">${inc.description}</div></div>
+      <div style="margin-top:0.9rem"><div class="fl">Follow-Up Actions</div><div style="font-size:12px;margin-top:4px;line-height:1.6">${inc.followUp}</div></div>
+      <hr>
+      <div style="font-size:13px;font-weight:600;margin-bottom:0.75rem">Notifications</div>
+      <div class="notif-block">
+        <div style="font-size:12px;font-weight:600;margin-bottom:5px">Support Coordinator</div>
+        <div class="dr"><span class="dl">Notified?</span><span class="badge ${n.supportCoord?.notified?'bs':'bw'}">${n.supportCoord?.notified?'Yes':'No'}</span></div>
+        ${n.supportCoord?.notified?`<div class="dr"><span class="dl">Name</span><span>${n.supportCoord.name}</span></div><div class="dr"><span class="dl">Date & Time</span><span>${n.supportCoord.date} ${n.supportCoord.time}</span></div>`:''}
+      </div>
+      <div class="notif-block">
+        <div style="font-size:12px;font-weight:600;margin-bottom:5px">Manager</div>
+        <div class="dr"><span class="dl">Notified?</span><span class="badge ${n.manager?.notified?'bs':'bw'}">${n.manager?.notified?'Yes':'No'}</span></div>
+        ${n.manager?.notified?`<div class="dr"><span class="dl">Name</span><span>${n.manager.name}</span></div><div class="dr"><span class="dl">Date & Time</span><span>${n.manager.date} ${n.manager.time}</span></div>`:''}
+      </div>
+      ${n.others&&n.others.length>0?`<div class="notif-block"><div style="font-size:12px;font-weight:600;margin-bottom:5px">Others Notified</div>${n.others.map(o=>`<div class="dr"><span class="dl">${o.name}</span><span>${o.date} ${o.time}</span></div>`).join('')}</div>`:''}
+      <div class="mf"><button class="btn" onclick="cm()">Close</button>
+      ${inc.status!=='Resolved'?`<button class="btn btn-primary" onclick="S.incidents.find(x=>x.id===${inc.id}).status='Resolved';audit('Incidents','Incident Marked Resolved','ID '+inc.id+' · '+inc.type+' · '+(gs(inc.staffId)?.name||'?')+' · '+inc.date);cm()">Mark Resolved</button>`:''}</div>`;
+  }
+  else if(m==='viewReport'){
+    const r=S.shiftReports.find(x=>x.id===S.viewReportId);if(!r)return'';const s=gs(r.staffId);
+    body=`<div class="mt">Shift Report</div>
+      <div class="dr"><span class="dl">Staff</span><span>${s?s.name:'—'}</span></div>
+      <div class="dr"><span class="dl">Date</span><span>${r.date}</span></div>
+      <div class="dr"><span class="dl">Shift</span><span>${r.shift}</span></div>
+      <div class="dr"><span class="dl">Location</span><span>${r.location}</span></div>
+      <div class="dr"><span class="dl">Mood</span><span>${r.mood}</span></div>
+      <div class="dr"><span class="dl">Incidents</span><span class="badge ${r.incidents?'bd':'bs'}">${r.incidents?'Yes':'None'}</span></div>
+      <hr>
+      <div style="font-size:13px;font-weight:600;margin-bottom:0.75rem">Client Reports</div>
+      ${(r.clientReports||[]).map(cr=>{const c=gc(cr.clientId);return`<div style="border:0.5px solid rgba(0,0,0,0.1);border-radius:7px;padding:0.9rem;margin-bottom:0.65rem">
+        <div style="font-size:12px;font-weight:600;margin-bottom:5px">${c?c.name:'Client'} <span style="font-size:10px;color:#666;font-weight:400">${c?c.dx:''}</span></div>
+        <div class="dr"><span class="dl">Mood</span><span>${cr.mood}</span></div>
+        ${cr.participation?`<div class="dr"><span class="dl">Participation</span><span>${cr.participation}</span></div>`:''}
+        <div style="font-size:12px;margin-top:6px;color:#666;line-height:1.6">${cr.notes}</div>
+      </div>`;}).join('')}
+      <div class="mf"><button class="btn" onclick="cm()">Close</button></div>`;
+  }
+  else if(m==='viewStaff'){
+    const s=gs(S.viewStaffId);if(!s)return'';const{pct}=tp(s.id);
+    body=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:1.1rem">
+      <div class="avatar" style="width:46px;height:46px;font-size:16px">${ini(s.name)}</div>
+      <div><div style="font-size:16px;font-weight:600">${s.name}</div><div style="font-size:12px;color:#666">${s.role} · ${s.location}</div></div>
+    </div>
+    <div class="dr"><span class="dl">Phone</span><span>${s.phone}</span></div>
+    <div class="dr"><span class="dl">Email</span><span>${s.email}</span></div>
+    <div class="dr"><span class="dl">Date of Birth</span><span>${s.dob}</span></div>
+    <div class="dr"><span class="dl">Date of Hire</span><span>${s.startDate}</span></div>
+    <div class="dr"><span class="dl">Training Completion</span><span class="badge ${pct===100?'bs':'bw'}">${pct===100?'Complete — Certified':pct+'% in progress'}</span></div>
+    <div style="margin-top:0.9rem"><div class="fl" style="margin-bottom:5px">Certifications</div>${s.certs.map(c=>`<span class="pill on">${c}</span>`).join('')}</div>
+    <hr>
+    <div style="font-size:13px;font-weight:600;margin-bottom:0.75rem">Documents & Attachments</div>
+    ${(s.docs||[]).length>0?(s.docs||[]).map((d,i)=>`<div class="doc-item"><div><div style="font-weight:600">${d.name}</div><div style="font-size:10px;color:#888">${d.date} · ${d.type}</div></div>${isAdmin()?`<button class="btn btn-danger" style="font-size:10px;padding:2px 7px" onclick="S.staff.find(x=>x.id===${s.id}).docs.splice(${i},1);render()">Remove</button>`:'—'}</div>`).join(''):'<div style="font-size:12px;color:#aaa">No documents attached.</div>'}
+    ${isAdmin()?`<div style="margin-top:0.75rem;display:flex;gap:6px;flex-wrap:wrap">
+      <input class="fi" id="docName" placeholder="Document name..." style="flex:1">
+      <select class="fi" id="docType" style="width:130px"><option>Certificate</option><option>License</option><option>ID</option><option>Training Record</option><option>Eval</option><option>Other</option></select>
+      <button class="btn btn-primary" style="font-size:11px" onclick="const nm=document.getElementById('docName').value.trim();if(!nm)return;const _dt=document.getElementById('docType').value;S.staff.find(x=>x.id===${s.id}).docs.push({name:nm,type:_dt,date:today()});audit('Staff','Document Attached',s.name+' · '+nm+' ('+_dt+')');render()">Attach</button>
+    </div>`:''}
+    ${isAdmin()?`<hr>
+    <div style="font-size:13px;font-weight:600;margin-bottom:0.75rem">Account & Login</div>
+    <div style="border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:0.9rem;background:#fafafa;margin-bottom:0.75rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div>
+          <div style="font-size:12px;font-weight:600">Temporary Password Reset</div>
+          <div style="font-size:11px;color:#666;margin-top:2px">Sends a one-time temp password to ${s.email}</div>
+        </div>
+        <button class="btn btn-primary" style="font-size:11px" onclick="S.modalCtx={staffId:${s.id}};om('pwReset')">🔑 Send Temp Password</button>
+      </div>
+      ${(S.passwordResetLog||[]).filter(r=>r.staffId===s.id).length>0?`
+        <div style="margin-top:0.75rem;border-top:0.5px solid rgba(0,0,0,0.08);padding-top:0.75rem">
+          <div style="font-size:10px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:5px">Reset History</div>
+          ${(S.passwordResetLog||[]).filter(r=>r.staffId===s.id).slice(-3).reverse().map(r=>`
+            <div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:0.5px solid rgba(0,0,0,0.06)">
+              <span style="color:#666">Sent by ${r.sentBy}</span><span style="color:#aaa">${r.sentAt}</span>
+            </div>`).join('')}
+        </div>`:''}
+    </div>`:''}
+    <div class="mf">
+      ${isAdmin()?`<button class="btn btn-danger" onclick="if(confirm('Remove this staff member?')){audit('Staff','Staff Member Removed',s.name+' · '+s.role);S.staff=S.staff.filter(x=>x.id!==${s.id});cm()}">Remove</button>`:''}
+      <button class="btn btn-primary" onclick="cm();S.currentTrainStaff=${s.id};nav('training')">View Training</button>
+    </div>`;
+  }
+  else if(m==='viewClient'){
+    const c=gc(S.viewClientId);if(!c)return'';
+    body=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:1.1rem">
+      <div class="avatar" style="width:46px;height:46px;font-size:16px">${ini(c.name)}</div>
+      <div><div style="font-size:16px;font-weight:600">${c.name}</div><div style="font-size:12px;color:#666">${c.dx}</div></div>
+    </div>
+    <div class="dr"><span class="dl">DOB</span><span>${c.dob}</span></div>
+    <div class="dr"><span class="dl">Location</span><span>${c.location}</span></div>
+    <div class="dr"><span class="dl">Guardian</span><span>${c.guardian}</span></div>
+    <div class="dr"><span class="dl">Physician</span><span>${c.primary}</span></div>
+    <div class="dr"><span class="dl">Status</span><span class="badge bs">${c.status}</span></div>
+    <div style="margin-top:0.9rem"><div class="fl">Care Notes</div><div style="font-size:12px;margin-top:4px;line-height:1.6;color:#666">${c.notes}</div></div>
+    <hr>
+    <div style="font-size:13px;font-weight:600;margin-bottom:0.75rem">Documents & Attachments</div>
+    ${(c.docs||[]).length>0?(c.docs||[]).map((d,i)=>`<div class="doc-item"><div><div style="font-weight:600">${d.name}</div><div style="font-size:10px;color:#888">${d.date} · ${d.type}</div></div>${isAdmin()?`<button class="btn btn-danger" style="font-size:10px;padding:2px 7px" onclick="S.clients.find(x=>x.id===${c.id}).docs.splice(${i},1);render()">Remove</button>`:'—'}</div>`).join(''):'<div style="font-size:12px;color:#aaa">No documents attached.</div>'}
+    ${isAdmin()?`<div style="margin-top:0.75rem;display:flex;gap:6px;flex-wrap:wrap">
+      <input class="fi" id="cdocName" placeholder="Document name..." style="flex:1">
+      <select class="fi" id="cdocType" style="width:130px"><option>Care Plan</option><option>Medical Record</option><option>ISP</option><option>Consent Form</option><option>Assessment</option><option>Other</option></select>
+      <button class="btn btn-primary" style="font-size:11px" onclick="const nm=document.getElementById('cdocName').value.trim();if(!nm)return;const _cdt=document.getElementById('cdocType').value;S.clients.find(x=>x.id===${c.id}).docs.push({name:nm,type:_cdt,date:today()});audit('Clients','Document Attached',c.name+' · '+nm+' ('+_cdt+')');render()">Attach</button>
+    </div>`:''}
+    <div class="mf"><button class="btn" onclick="cm()">Close</button></div>`;
+  }
+  else if(m==='addStaff'){body=`<div class="mt">Add Staff Member</div>
+    <div class="g2"><div class="fg"><label class="fl">First Name</label><input class="fi" id="sf" placeholder="First"></div><div class="fg"><label class="fl">Last Name</label><input class="fi" id="sl" placeholder="Last"></div></div>
+    <div class="fg"><label class="fl">Role</label><select class="fi" id="sr">${S.adminConfig.roles.map(r=>`<option>${r}</option>`).join('')}</select></div>
+    <div class="g2"><div class="fg"><label class="fl">Phone</label><input class="fi" id="sp"></div><div class="fg"><label class="fl">Email</label><input class="fi" id="se"></div></div>
+    <div class="g2"><div class="fg"><label class="fl">Date of Birth</label><input class="fi" type="date" id="sdb"></div><div class="fg"><label class="fl">Date of Hire</label><input class="fi" type="date" id="ssd"></div></div>
+    <div class="fg"><label class="fl">Location</label><select class="fi" id="sloc">${S.adminConfig.locations.map(l=>`<option>${l}</option>`).join('')}</select></div>
+    <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+    <button class="btn btn-primary" onclick="const n=document.getElementById('sf').value.trim()+' '+document.getElementById('sl').value.trim();if(!n.trim()||n===' ')return;const id=Date.now();S.staff.push({id,name:n,role:document.getElementById('sr').value,status:'active',phone:document.getElementById('sp').value,email:document.getElementById('se').value,dob:document.getElementById('sdb').value,startDate:document.getElementById('ssd').value,certs:[],location:document.getElementById('sloc').value,docs:[]});S.trainingProgress[id]={completedModules:[],signedPP:false,signedFinal:false};audit('Staff','Staff Member Added',n+' · '+document.getElementById('sr').value+' · '+document.getElementById('sloc').value);cm()">Add Staff Member</button></div>`;
+  }
+  else if(m==='addClient'){body=`<div class="mt">Add Client</div>
+    <div class="g2"><div class="fg"><label class="fl">First Name</label><input class="fi" id="cf"></div><div class="fg"><label class="fl">Last Name / Initial</label><input class="fi" id="cl"></div></div>
+    <div class="fg"><label class="fl">Diagnosis / Primary Condition</label><input class="fi" id="cdx"></div>
+    <div class="g2"><div class="fg"><label class="fl">Date of Birth</label><input class="fi" type="date" id="cdb"></div><div class="fg"><label class="fl">Location</label><select class="fi" id="cloc">${S.adminConfig.locations.map(l=>`<option>${l}</option>`).join('')}</select></div></div>
+    <div class="fg"><label class="fl">Guardian / Emergency Contact</label><input class="fi" id="cg" placeholder="Name & phone"></div>
+    <div class="fg"><label class="fl">Primary Physician</label><input class="fi" id="cmd" placeholder="Dr. Name"></div>
+    <div class="fg"><label class="fl">Care Notes</label><textarea class="fi" id="cn"></textarea></div>
+    <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+    <button class="btn btn-primary" onclick="const fn=document.getElementById('cf').value.trim();const ln=document.getElementById('cl').value.trim();const n=fn+' '+(ln.length>1?ln.charAt(0)+'.':ln);if(!fn)return;S.clients.push({id:Date.now(),name:n,dob:document.getElementById('cdb').value,location:document.getElementById('cloc').value,guardian:document.getElementById('cg').value,primary:document.getElementById('cmd').value,dx:document.getElementById('cdx').value,status:'active',notes:document.getElementById('cn').value,docs:[]});cm()">Add Client</button></div>`;
+  }
+  else if(m==='timeOff'){body=`<div class="mt">Time Off Request</div>
+    <div class="fg"><label class="fl">Staff Member</label><select class="fi" id="ts"><option value="">Select...</option>${S.staff.filter(s=>s.role!=='Admin').map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}</select></div>
+    <div class="fg"><label class="fl">Type</label><select class="fi" id="tt"><option>Vacation</option><option>Sick</option><option>Personal</option><option>Unpaid</option></select></div>
+    <div class="g2"><div class="fg"><label class="fl">Start Date</label><input class="fi" type="date" id="tst"></div><div class="fg"><label class="fl">End Date</label><input class="fi" type="date" id="ten"></div></div>
+    <div class="fg"><label class="fl">Reason</label><input class="fi" id="tr"></div>
+    <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+    <button class="btn btn-primary" onclick="const sid=document.getElementById('ts').value;if(!sid)return;S.timeOff.push({id:Date.now(),staffId:parseInt(sid),type:document.getElementById('tt').value,start:document.getElementById('tst').value,end:document.getElementById('ten').value,status:'Pending',reason:document.getElementById('tr').value});cm()">Submit Request</button></div>`;
+  }
+  else if(m==='assignMgr'){const loc=S.modalCtx.loc;
+    body=`<div class="mt">Assign Manager — ${loc}</div>
+      <div class="fg"><label class="fl">Manager</label><select class="fi" id="amSel"><option value="">Unassigned</option>${S.staff.filter(s=>s.role==='Manager'||s.role==='Admin').map(s=>`<option value="${s.id}" ${S.locationManagers[loc]===s.id?'selected':''}>${s.name}</option>`).join('')}</select></div>
+      <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+      <button class="btn btn-primary" onclick="const v=document.getElementById('amSel').value;const prevMgr=S.locationManagers['${loc}'];S.locationManagers['${loc}']=v?parseInt(v):null;audit('Settings','Location Manager Changed','${loc}: '+(prevMgr?gs(prevMgr)?.name:'Unassigned')+' → '+(v?gs(parseInt(v))?.name:'Unassigned'));cm()">Save</button></div>`;
+  }
+  else if(m==='signPP'){body=`<div class="mt">Policies & Procedures Manual</div>
+    <div style="background:#f5f4f0;border-radius:7px;padding:1rem;max-height:200px;overflow-y:auto;font-size:11px;line-height:1.8;color:#555;margin-bottom:0.9rem">
+      <div style="font-weight:600;font-size:12px;margin-bottom:6px">Sonroc Care / Perfect Stay Group — Policies & Procedures</div>
+      <p>All staff must read, understand, and follow all policies. <strong>Confidentiality:</strong> all client info is HIPAA-protected. <strong>Abuse/Neglect:</strong> must be reported immediately. <strong>Medications:</strong> only authorized staff may administer using the 5 Rights. <strong>Incidents:</strong> all must be documented within 24hrs. <strong>Timekeeping:</strong> staff must submit a shift report before clocking out every shift. Failure to comply may result in disciplinary action.</p>
+    </div>
+    <div style="font-size:12px;margin-bottom:6px">By signing, I confirm I have read and agree to abide by all policies:</div>
+    <div class="sig" id="ppSig" onclick="this.className='sig done';this.textContent='Signed — '+new Date().toLocaleString()">Click here to sign</div>
+    <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+    <button class="btn btn-primary" onclick="const el=document.getElementById('ppSig');if(!el.classList.contains('done')){alert('Please sign first.');return;}if(!S.trainingProgress[S.currentTrainStaff])S.trainingProgress[S.currentTrainStaff]={completedModules:[],signedPP:false,signedFinal:false};S.trainingProgress[S.currentTrainStaff].signedPP=true;audit('Training','P&P Manual Signed',gs(S.currentTrainStaff)?.name||'?');cm()">Save Signature</button></div>`;
+  }
+  else if(m==='signFinal'){body=`<div class="mt">Final Comprehensive Acknowledgment</div>
+    <div style="font-size:12px;line-height:1.8;color:#555;margin-bottom:0.9rem">I hereby acknowledge that I have: completed all 6 required training modules, read and signed the Policies & Procedures Manual, and understand all my responsibilities including the requirement to submit a shift report before clocking out of every shift. I understand non-compliance may result in disciplinary action.</div>
+    <div class="sig" id="fnSig" onclick="this.className='sig done';this.textContent='Signed — '+new Date().toLocaleString()">Click here to sign</div>
+    <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+    <button class="btn btn-primary" onclick="const el=document.getElementById('fnSig');if(!el.classList.contains('done')){alert('Please sign first.');return;}S.trainingProgress[S.currentTrainStaff].signedFinal=true;audit('Training','Final Acknowledgment Signed',(gs(S.currentTrainStaff)?.name||'?')+' — Training Complete');cm()">Complete Training</button></div>`;
+  }
+
+  else if(m==='pwReset'){
+    const s=gs(S.modalCtx.staffId);if(!s)return'';
+    body=`<div class="mt">Send Temporary Password</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:1.1rem">
+        <div class="avatar" style="width:40px;height:40px;font-size:14px">${ini(s.name)}</div>
+        <div><div style="font-size:14px;font-weight:600">${s.name}</div><div style="font-size:12px;color:#666">${s.email}</div></div>
+      </div>
+      <div class="alert a-info">A randomly generated temporary password will be sent to <strong>${s.email}</strong>. The staff member should be instructed to log in and change their password immediately.</div>
+      <div style="font-size:12px;color:#666;margin-top:0.75rem;line-height:1.6">This action will be logged with your name and timestamp for auditing purposes.</div>
+      <div class="mf">
+        <button class="btn" onclick="cm()">Cancel</button>
+        <button class="btn btn-primary" onclick="sendTempPassword(${s.id})">✉ Send Temporary Password</button>
+      </div>`;
+  }
+  else if(m==='pwSent'){
+    const ctx=S.modalCtx;const s=gs(ctx.staffId);
+    body=`<div class="mt" style="color:#3B6D11">✓ Temporary Password Sent</div>
+      <div class="alert a-ok" style="margin-bottom:1rem">Password successfully sent to <strong>${ctx.email}</strong> at ${ctx.sentAt}.</div>
+      <div style="background:#f5f4f0;border-radius:8px;padding:1rem;margin-bottom:0.9rem">
+        <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Temporary Password (shown once)</div>
+        <div style="font-size:20px;font-weight:600;font-family:monospace;letter-spacing:2px;color:#1a3a5c;user-select:all">${ctx.pass}</div>
+        <div style="font-size:11px;color:#888;margin-top:5px">In production, this is only delivered to the staff member's email and not shown here.</div>
+      </div>
+      <div style="font-size:12px;color:#666;line-height:1.6">Instruct <strong>${s?s.name:''}</strong> to log in with this password and update it immediately. This reset has been logged.</div>
+      <div class="mf"><button class="btn btn-primary" onclick="cm()">Done</button></div>`;
+  }
+
+
+  else if(m==='editPay'){
+    const s=gs(S.modalCtx.staffId);if(!s)return'';
+    body=`<div class="mt">Edit Pay Rate — ${s.name}</div>
+      <div class="fg"><label class="fl">Pay Type</label><select class="fi" id="payType" onchange="document.getElementById('otRow').style.display=this.value==='hourly'?'block':'none';document.getElementById('rateLabel').textContent=this.value==='salary'?'Annual Salary ($)':'Hourly Rate ($)'">
+        <option value="hourly" ${s.payType==='hourly'?'selected':''}>Hourly</option>
+        <option value="salary" ${s.payType==='salary'?'selected':''}>Salary</option>
+      </select></div>
+      <div class="fg"><label class="fl" id="rateLabel">${s.payType==='salary'?'Annual Salary ($)':'Hourly Rate ($)'}</label><input class="fi" type="number" step="0.01" id="payRate" value="${s.payRate||0}"></div>
+      <div class="fg" id="otRow" style="display:${s.payType==='hourly'?'block':'none'}"><label class="fl">Overtime Rate ($/hr)</label><input class="fi" type="number" step="0.01" id="otRate" value="${s.overtimeRate||0}"></div>
+      <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+      <button class="btn btn-primary" onclick="const st=S.staff.find(x=>x.id===${s.id});if(st){st.payType=document.getElementById('payType').value;st.payRate=parseFloat(document.getElementById('payRate').value)||0;st.overtimeRate=parseFloat(document.getElementById('otRate').value)||0;audit('Pay Rates','Pay Rate Updated',st.name+' · '+st.payType+' · '+(st.payType==='salary'?'$'+st.payRate.toLocaleString()+'/yr':'$'+st.payRate.toFixed(2)+'/hr'))}cm()">Save</button></div>`;
+  }
+
+  else if(m==='addMed'){
+    const cid=S.modalCtx.clientId;const c=gc(cid);
+    body=`<div class="mt">Add Medication — ${c?c.name:''}</div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Medication Name</label><input class="fi" id="medName" placeholder="e.g. Lisinopril"></div>
+        <div class="fg"><label class="fl">Dose</label><input class="fi" id="medDose" placeholder="e.g. 10mg"></div>
+      </div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Route</label><select class="fi" id="medRoute"><option>Oral</option><option>Sublingual</option><option>Topical</option><option>Injection</option><option>Inhaled</option><option>Rectal</option><option>Transdermal</option><option>Other</option></select></div>
+        <div class="fg"><label class="fl">Frequency</label><select class="fi" id="medFreq"><option>Daily</option><option>Twice daily</option><option>Three times daily</option><option>Four times daily</option><option>Every other day</option><option>Weekly</option><option>As needed (PRN)</option></select></div>
+      </div>
+      <div class="fg"><label class="fl">Scheduled Times (comma-separated, 24hr)</label><input class="fi" id="medTimes" placeholder="e.g. 08:00, 20:00"></div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Prescriber</label><input class="fi" id="medPrescriber" placeholder="Dr. Name"></div>
+        <div class="fg"><label class="fl">Start Date</label><input class="fi" type="date" id="medStart" value="${today()}"></div>
+      </div>
+      <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+      <button class="btn btn-primary" onclick="
+        const nm=document.getElementById('medName').value.trim();if(!nm){alert('Enter medication name.');return;}
+        if(!S.medications[${cid}])S.medications[${cid}]=[];
+        const newMed={id:Date.now(),name:nm,dose:document.getElementById('medDose').value,route:document.getElementById('medRoute').value,frequency:document.getElementById('medFreq').value,scheduledTimes:document.getElementById('medTimes').value.split(',').map(t=>t.trim()).filter(Boolean),prescriber:document.getElementById('medPrescriber').value,startDate:document.getElementById('medStart').value,endDate:'',active:true};
+        S.medications[${cid}].push(newMed);
+        audit('MAR','Medication Added',(gc(${cid})?.name||'')+' · '+nm+' '+newMed.dose+' '+newMed.route);
+        cm()">Add Medication</button></div>`;
+  }
+
+  else if(m==='addMAREntry'){
+    const cid=S.modalCtx.clientId;const c=gc(cid);
+    const meds=(S.medications[cid]||[]).filter(m=>m.active);
+    body=`<div class="mt">Record Medication Administration — ${c?c.name:''}</div>
+      <div class="fg"><label class="fl">Medication</label><select class="fi" id="marMed" onchange="const m=(S.medications[${cid}]||[]).find(x=>x.id===parseInt(this.value));if(m){document.getElementById('marDose').value=m.dose;document.getElementById('marRoute').value=m.route;document.getElementById('marSchedTime').value=m.scheduledTimes[0]||'';}">
+        <option value="">Select medication...</option>
+        ${meds.map(m=>`<option value="${m.id}">${m.name} — ${m.dose} (${m.route})</option>`).join('')}
+      </select></div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Dose</label><input class="fi" id="marDose"></div>
+        <div class="fg"><label class="fl">Route</label><input class="fi" id="marRoute"></div>
+      </div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Scheduled Time</label><input class="fi" type="time" id="marSchedTime"></div>
+        <div class="fg"><label class="fl">Time Given</label><input class="fi" type="time" id="marGivenTime" value="${nowT()}"></div>
+      </div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Date</label><input class="fi" type="date" id="marDate" value="${today()}"></div>
+        <div class="fg"><label class="fl">Staff Member</label><select class="fi" id="marStaff">
+          ${S.staff.filter(s=>s.role!=='Admin').map(s=>`<option value="${s.id}">${s.name}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="fg"><label class="fl">Status</label><select class="fi" id="marStatus" onchange="document.getElementById('marRefusalRow').style.display=this.value==='Refused'?'block':'none'">
+        <option>Given</option><option>Refused</option><option>Held</option><option>Not Available</option>
+      </select></div>
+      <div class="fg" id="marRefusalRow" style="display:none"><label class="fl">Refusal / Hold Reason</label><input class="fi" id="marRefusal" placeholder="Reason for refusal or hold"></div>
+      <div class="fg"><label class="fl">Notes</label><textarea class="fi" id="marNotes" placeholder="Administration notes..."></textarea></div>
+      <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+      <button class="btn btn-primary" onclick="
+        const medId=parseInt(document.getElementById('marMed').value);if(!medId){alert('Select a medication.');return;}
+        const med=(S.medications[${cid}]||[]).find(x=>x.id===medId);
+        const entry={id:Date.now(),clientId:${cid},medId:medId,medName:med?med.name:'',dose:document.getElementById('marDose').value,route:document.getElementById('marRoute').value,scheduledTime:document.getElementById('marSchedTime').value,givenTime:document.getElementById('marGivenTime').value,givenDate:document.getElementById('marDate').value,staffId:parseInt(document.getElementById('marStaff').value),status:document.getElementById('marStatus').value,notes:document.getElementById('marNotes').value,refusalReason:document.getElementById('marRefusal')?.value||''};
+        S.marEntries.push(entry);
+        audit('MAR','Medication Administered',(gc(${cid})?.name||'')+' · '+entry.medName+' '+entry.dose+' · '+entry.status+' · '+(gs(entry.staffId)?.name||''));
+        cm()">Record Administration</button></div>`;
+  }
+
+  if(!body)return'';
+  return`<div class="mo" onclick="if(event.target===this)cm()"><div class="md">${body}</div></div>`;
+}
+
+// ── CSV HELPERS ───────────────────────────────────────────
+function escCSV(v){if(v==null)return'';const s=String(v);return(s.includes(',')||s.includes('"')||s.includes('\n'))?'"'+s.replace(/"/g,'""')+'"':s;}
+function rowCSV(arr){return arr.map(escCSV).join(',');}
+function downloadCSV(filename,rows){
+  try{
+    const csv='\uFEFF'+rows.map(r=>rowCSV(r)).join('\r\n'); // BOM for Excel UTF-8
+    // Try Blob + object URL first (native browsers)
+    const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }catch(e){
+    // Fallback: data URI (works in sandboxed iframes)
+    try{
+      const csv=rows.map(r=>rowCSV(r)).join('\r\n');
+      const encoded='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+      const a=document.createElement('a');a.href=encoded;a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);
+    }catch(e2){
+      // Last resort: open CSV in new tab so user can copy/save manually
+      const csv=rows.map(r=>rowCSV(r)).join('\r\n');
+      const w=window.open('','_blank');
+      if(w){w.document.write('<pre>'+csv.replace(/</g,'&lt;')+'</pre>');w.document.title=filename;}
+      else{alert('Export blocked by browser. Please allow popups for this page, or copy the data manually.');}
+    }
+  }
+}
+function parseCSV(text){
+  const lines=text.trim().split('\n');
+  const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+  return lines.slice(1).map(line=>{
+    const vals=[];let cur='',inQ=false;
+    for(const ch of line){if(ch==='"'){inQ=!inQ;}else if(ch===','&&!inQ){vals.push(cur.trim());cur='';}else cur+=ch;}
+    vals.push(cur.trim());
+    const obj={};headers.forEach((h,i)=>obj[h]=vals[i]||'');
+    return obj;
+  });
+}
+
+// ── IMPORT PAGE ──────────────────────────────────────────
+function renderImport(){
+  return`
+  <div class="alert a-info" style="margin-bottom:0.9rem">Import staff or client data from CareSmartz360 or any CSV. <strong>Two methods:</strong> upload a CSV file, or paste CSV text directly. Admin only.</div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">📥 Import Staff</div>
+      <div style="font-size:12px;color:#666;margin-bottom:0.75rem;line-height:1.7">Required columns: <strong>name, role, email, phone, location, startDate, dob</strong></div>
+      <button class="btn" style="font-size:11px;margin-bottom:0.75rem" onclick="downloadCSV('sonroc_staff_template.csv',[['name','role','email','phone','location','startDate','dob'],['Jordan Ellis','Support Worker','jordan@email.com','(801)555-0100','Home A','2022-03-01','1990-04-12']])">⬇ Download Staff Template</button>
+      <div style="font-size:11px;color:#888;margin-bottom:0.75rem">CareSmartz360: Reports → Caregiver List → Export CSV, then match columns to template above.</div>
+      <div class="tabs" style="margin-bottom:0.75rem">
+        <button class="tab ${(S.importStaffTab||0)===0?'active':''}" onclick="S.importStaffTab=0;render()">Paste CSV</button>
+        <button class="tab ${(S.importStaffTab||0)===1?'active':''}" onclick="S.importStaffTab=1;render()">Upload File</button>
+      </div>
+      ${(S.importStaffTab||0)===0?`
+        <div class="fg"><label class="fl">Paste CSV data here</label><textarea class="fi" id="staffPaste" style="min-height:110px;font-family:monospace;font-size:11px" placeholder="name,role,email,phone,location,startDate,dob&#10;Jordan Ellis,Support Worker,jordan@email.com,(801)555-0100,Home A,2022-03-01,1990-04-12"></textarea></div>
+        <button class="btn btn-primary" onclick="importStaffPaste()">Import Staff</button>
+      `:`
+        <div class="fg"><label class="fl">Upload Staff CSV</label><input type="file" accept=".csv" id="staffCSV" class="fi" style="padding:5px"></div>
+        <button class="btn btn-primary" onclick="importStaffFile()">Import Staff</button>
+      `}
+      <div id="staffResult" style="margin-top:8px;font-size:12px"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📥 Import Clients</div>
+      <div style="font-size:12px;color:#666;margin-bottom:0.75rem;line-height:1.7">Required columns: <strong>name, dx, location, dob, guardian, primary, notes</strong></div>
+      <button class="btn" style="font-size:11px;margin-bottom:0.75rem" onclick="downloadCSV('sonroc_client_template.csv',[['name','dx','location','dob','guardian','primary','notes'],['Robert M.','Intellectual Disability','Home A','1965-07-14','Linda M. (801)555-0200','Dr. Patel','Enjoys music']])">⬇ Download Client Template</button>
+      <div style="font-size:11px;color:#888;margin-bottom:0.75rem">CareSmartz360: Reports → Client List → Export CSV, then match columns to template above.</div>
+      <div class="tabs" style="margin-bottom:0.75rem">
+        <button class="tab ${(S.importClientTab||0)===0?'active':''}" onclick="S.importClientTab=0;render()">Paste CSV</button>
+        <button class="tab ${(S.importClientTab||0)===1?'active':''}" onclick="S.importClientTab=1;render()">Upload File</button>
+      </div>
+      ${(S.importClientTab||0)===0?`
+        <div class="fg"><label class="fl">Paste CSV data here</label><textarea class="fi" id="clientPaste" style="min-height:110px;font-family:monospace;font-size:11px" placeholder="name,dx,location,dob,guardian,primary,notes&#10;Robert M.,Intellectual Disability,Home A,1965-07-14,Linda M. (801)555-0200,Dr. Patel,Enjoys music"></textarea></div>
+        <button class="btn btn-primary" onclick="importClientsPaste()">Import Clients</button>
+      `:`
+        <div class="fg"><label class="fl">Upload Client CSV</label><input type="file" accept=".csv" id="clientCSV" class="fi" style="padding:5px"></div>
+        <button class="btn btn-primary" onclick="importClientsFile()">Import Clients</button>
+      `}
+      <div id="clientResult" style="margin-top:8px;font-size:12px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">CareSmartz360 Migration Guide</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem;font-size:12px">
+      ${[
+        ['1. Export Caregivers','CareSmartz360 → Reports → Caregiver List → Export CSV'],
+        ['2. Export Clients','CareSmartz360 → Reports → Client List → Export CSV'],
+        ['3. Download Templates','Use the template buttons above to see expected column names'],
+        ['4. Paste or Upload','Open your CSV in Excel/Sheets, copy the data, paste it here'],
+        ['5. Verify','Review imported records in the Staff & Clients tabs'],
+        ['6. Add documents','Attach care plans, ISPs, certifications in each profile'],
+      ].map(([t,d])=>`<div style="border:0.5px solid rgba(0,0,0,0.1);border-radius:7px;padding:0.75rem;background:#fafafa"><div style="font-weight:600;margin-bottom:3px">${t}</div><div style="color:#666">${d}</div></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function processImportRows(rows,type){
+  let added=0,skipped=0;
+  rows.forEach(row=>{
+    if(type==='staff'){
+      if(!row.name||!row.name.trim()){skipped++;return;}
+      if(S.staff.find(s=>s.name.trim().toLowerCase()===row.name.trim().toLowerCase())){skipped++;return;}
+      const id=Date.now()+Math.random();
+      S.staff.push({id,name:row.name.trim(),role:row.role||'Support Worker',email:row.email||'',phone:row.phone||'',location:row.location||'Home A',startDate:row.startDate||'',dob:row.dob||'',certs:[],status:'active',docs:[]});
+      S.trainingProgress[id]={completedModules:[],signedPP:false,signedFinal:false};
+      added++;
+    } else {
+      if(!row.name||!row.name.trim()){skipped++;return;}
+      if(S.clients.find(c=>c.name.trim().toLowerCase()===row.name.trim().toLowerCase())){skipped++;return;}
+      S.clients.push({id:Date.now()+Math.random(),name:row.name.trim(),dx:row.dx||'',location:row.location||'Home A',dob:row.dob||'',guardian:row.guardian||'',primary:row.primary||'',notes:row.notes||'',status:'active',docs:[]});
+      added++;
+    }
+  });
+  return{added,skipped};
+}
+
+function showImportResult(elId,added,skipped){
+  const el=document.getElementById(elId);
+  if(el)el.innerHTML=`<div class="alert ${added>0?'a-ok':'a-warn'}">${added} record(s) imported, ${skipped} skipped (duplicates or blank rows).</div>`;
+}
+
+function importStaffPaste(){
+  const text=document.getElementById('staffPaste')?.value||'';
+  if(!text.trim()){alert('Paste some CSV data first.');return;}
+  const rows=parseCSV(text);
+  const{added,skipped}=processImportRows(rows,'staff');
+  showImportResult('staffResult',added,skipped);if(added>0)audit('Import','Staff Imported',`${added} staff member(s) imported from CSV`);render();
+}
+function importClientsPaste(){
+  const text=document.getElementById('clientPaste')?.value||'';
+  if(!text.trim()){alert('Paste some CSV data first.');return;}
+  const rows=parseCSV(text);
+  const{added,skipped}=processImportRows(rows,'client');
+  showImportResult('clientResult',added,skipped);if(added>0)audit('Import','Clients Imported',`${added} client(s) imported from CSV`);render();
+}
+function importStaffFile(){
+  const f=document.getElementById('staffCSV')?.files?.[0];
+  if(!f){alert('Choose a CSV file first.');return;}
+  const r=new FileReader();
+  r.onload=e=>{const rows=parseCSV(e.target.result);const{added,skipped}=processImportRows(rows,'staff');showImportResult('staffResult',added,skipped);render();};
+  r.onerror=()=>alert('Could not read file. Try the Paste CSV tab instead.');
+  r.readAsText(f);
+}
+function importClientsFile(){
+  const f=document.getElementById('clientCSV')?.files?.[0];
+  if(!f){alert('Choose a CSV file first.');return;}
+  const r=new FileReader();
+  r.onload=e=>{const rows=parseCSV(e.target.result);const{added,skipped}=processImportRows(rows,'client');showImportResult('clientResult',added,skipped);render();};
+  r.onerror=()=>alert('Could not read file. Try the Paste CSV tab instead.');
+  r.readAsText(f);
+}
+
+// ── EXPORT & REPORTS PAGE ─────────────────────────────────
+// Selection state: S.exportSel = { shiftReports: Set, incidents: Set, clockRecords: Set, staff: Set, clients: Set }
+function getExSel(key){if(!S.exportSel)S.exportSel={};if(!S.exportSel[key])S.exportSel[key]=new Set();return S.exportSel[key];}
+function toggleSel(key,id){const s=getExSel(key);s.has(id)?s.delete(id):s.add(id);render();}
+function selAll(key,ids){const s=getExSel(key);ids.forEach(id=>s.add(id));render();}
+function deselAll(key){if(S.exportSel)S.exportSel[key]=new Set();render();}
+function selCount(key){return getExSel(key).size;}
+
+function applyFilters(){
+  const fs=S.exportFilters||{};
+  const fSR=S.shiftReports.filter(r=>{
+    if(fs.dateFrom&&r.date<fs.dateFrom)return false;
+    if(fs.dateTo&&r.date>fs.dateTo)return false;
+    if(fs.staffId&&r.staffId!=fs.staffId)return false;
+    if(fs.location&&r.location!==fs.location)return false;
+    return true;
+  });
+  const fINC=S.incidents.filter(i=>{
+    if(fs.dateFrom&&i.date<fs.dateFrom)return false;
+    if(fs.dateTo&&i.date>fs.dateTo)return false;
+    if(fs.staffId&&i.staffId!=fs.staffId)return false;
+    if(fs.clientId&&i.clientId!=fs.clientId)return false;
+    return true;
+  });
+  const fCLK=S.clockRecords.filter(r=>{
+    if(fs.dateFrom&&r.date<fs.dateFrom)return false;
+    if(fs.dateTo&&r.date>fs.dateTo)return false;
+    if(fs.staffId&&r.staffId!=fs.staffId)return false;
+    if(fs.location&&r.location!==fs.location)return false;
+    return true;
+  });
+  const fSTF=S.staff.filter(s=>{
+    if(fs.location&&s.location!==fs.location)return false;
+    if(fs.staffId&&s.id!=fs.staffId)return false;
+    return true;
+  });
+  const fCLI=S.clients.filter(c=>{
+    if(fs.location&&c.location!==fs.location)return false;
+    if(fs.clientId&&c.id!=fs.clientId)return false;
+    return true;
+  });
+  return{fSR,fINC,fCLK,fSTF,fCLI};
+}
+
+function renderExport(){
+  const fs=S.exportFilters||{dateFrom:'',dateTo:'',staffId:'',clientId:'',location:''};
+  S.exportFilters=fs;
+  const{fSR,fINC,fCLK,fSTF,fCLI}=applyFilters();
+  const tab=S.exportTab||0;
+  const totalSel=selCount('shiftReports')+selCount('incidents')+selCount('clockRecords')+selCount('staff')+selCount('clients');
+  const tabDefs=[
+    {label:'Shift Reports',icon:'📄',key:'shiftReports',count:fSR.length},
+    {label:'Incidents',icon:'🚨',key:'incidents',count:fINC.length},
+    {label:'Clock Records',icon:'⏱',key:'clockRecords',count:fCLK.length},
+    {label:'Staff',icon:'👤',key:'staff',count:fSTF.length},
+    {label:'Clients',icon:'🏠',key:'clients',count:fCLI.length},
+  ];
+
+  function chkAll(key,ids,size){return `<input type="checkbox" ${size===ids.length&&ids.length>0?'checked':''} onchange="this.checked?selAll('${key}',[${ids.join(',')}]):deselAll('${key}')">`;}
+
+  let tabContent='';
+  const sel0=getExSel('shiftReports');
+  const sel1=getExSel('incidents');
+  const sel2=getExSel('clockRecords');
+  const sel3=getExSel('staff');
+  const sel4=getExSel('clients');
+
+  if(tab===0){
+    tabContent=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.75rem;flex-wrap:wrap">
+        <button class="btn" style="font-size:11px" onclick="selAll('shiftReports',[${fSR.map(r=>r.id).join(',')}])">Select All ${fSR.length}</button>
+        <button class="btn" style="font-size:11px" onclick="deselAll('shiftReports')">Deselect All</button>
+        <span style="font-size:11px;color:#666">${sel0.size} selected</span>
+        ${sel0.size>0?`<button class="btn btn-primary" style="font-size:11px;margin-left:auto" onclick="exportSelectedShiftReports()">⬇ Export ${sel0.size} Selected</button>`:''}
+      </div>
+      <div style="overflow-x:auto;max-height:450px;overflow-y:auto">
+        <table>
+          <tr><th style="width:32px"><input type="checkbox" ${sel0.size===fSR.length&&fSR.length>0?'checked':''} onchange="this.checked?selAll('shiftReports',[${fSR.map(r=>r.id).join(',')}]):deselAll('shiftReports')"></th><th>Date</th><th>Staff</th><th>Location</th><th>Shift</th><th>Clients</th><th>Mood</th><th>Incidents</th></tr>
+          ${fSR.map(r=>{const s=gs(r.staffId);return`<tr style="${sel0.has(r.id)?'background:#EBF4FF':''}">
+            <td><input type="checkbox" ${sel0.has(r.id)?'checked':''} onchange="toggleSel('shiftReports',${r.id})"></td>
+            <td>${r.date}</td><td style="font-size:11px">${s?s.name:'—'}</td><td style="font-size:11px">${r.location}</td>
+            <td style="font-size:11px">${r.shift||'—'}</td><td>${(r.clientReports||[]).length}</td>
+            <td>${r.mood||'—'}</td><td><span class="badge ${r.incidents?'bd':'bs'}" style="font-size:9px">${r.incidents?'Yes':'None'}</span></td>
+          </tr>`;}).join('')}
+          ${fSR.length===0?`<tr><td colspan="8" style="text-align:center;color:#aaa;padding:1.5rem">No shift reports match filters.</td></tr>`:''}
+        </table>
+      </div>`;
+  } else if(tab===1){
+    tabContent=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.75rem;flex-wrap:wrap">
+        <button class="btn" style="font-size:11px" onclick="selAll('incidents',[${fINC.map(i=>i.id).join(',')}])">Select All ${fINC.length}</button>
+        <button class="btn" style="font-size:11px" onclick="deselAll('incidents')">Deselect All</button>
+        <span style="font-size:11px;color:#666">${sel1.size} selected</span>
+        ${sel1.size>0?`<button class="btn btn-primary" style="font-size:11px;margin-left:auto" onclick="exportSelectedIncidents()">⬇ Export ${sel1.size} Selected</button>`:''}
+      </div>
+      <div style="overflow-x:auto;max-height:450px;overflow-y:auto">
+        <table>
+          <tr><th style="width:32px"><input type="checkbox" ${sel1.size===fINC.length&&fINC.length>0?'checked':''} onchange="this.checked?selAll('incidents',[${fINC.map(i=>i.id).join(',')}]):deselAll('incidents')"></th><th>Date</th><th>Time</th><th>Staff</th><th>Client</th><th>Type</th><th>Severity</th><th>SC Notified</th><th>Mgr Notified</th><th>Status</th></tr>
+          ${fINC.map(i=>{const s=gs(i.staffId),c=gc(i.clientId);return`<tr style="${sel1.has(i.id)?'background:#EBF4FF':''}">
+            <td><input type="checkbox" ${sel1.has(i.id)?'checked':''} onchange="toggleSel('incidents',${i.id})"></td>
+            <td>${i.date}</td><td>${i.time||'—'}</td><td style="font-size:11px">${s?s.name:'—'}</td><td style="font-size:11px">${c?c.name:'—'}</td>
+            <td style="font-size:11px">${i.type}</td><td><span class="badge bw" style="font-size:9px">${i.severity}</span></td>
+            <td><span class="badge ${i.notifications&&i.notifications.supportCoord&&i.notifications.supportCoord.notified?'bs':'bg'}" style="font-size:9px">${i.notifications&&i.notifications.supportCoord&&i.notifications.supportCoord.notified?'Yes':'No'}</span></td>
+            <td><span class="badge ${i.notifications&&i.notifications.manager&&i.notifications.manager.notified?'bs':'bg'}" style="font-size:9px">${i.notifications&&i.notifications.manager&&i.notifications.manager.notified?'Yes':'No'}</span></td>
+            <td><span class="badge ${i.status==='Resolved'?'bs':'bw'}" style="font-size:9px">${i.status}</span></td>
+          </tr>`;}).join('')}
+          ${fINC.length===0?`<tr><td colspan="10" style="text-align:center;color:#aaa;padding:1.5rem">No incidents match filters.</td></tr>`:''}
+        </table>
+      </div>`;
+  } else if(tab===2){
+    tabContent=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.75rem;flex-wrap:wrap">
+        <button class="btn" style="font-size:11px" onclick="selAll('clockRecords',[${fCLK.map(r=>r.id).join(',')}])">Select All ${fCLK.length}</button>
+        <button class="btn" style="font-size:11px" onclick="deselAll('clockRecords')">Deselect All</button>
+        <span style="font-size:11px;color:#666">${sel2.size} selected</span>
+        ${sel2.size>0?`<button class="btn btn-primary" style="font-size:11px;margin-left:auto" onclick="exportSelectedClock()">⬇ Export ${sel2.size} Selected</button>`:''}
+      </div>
+      <div style="overflow-x:auto;max-height:450px;overflow-y:auto">
+        <table>
+          <tr><th style="width:32px"><input type="checkbox" ${sel2.size===fCLK.length&&fCLK.length>0?'checked':''} onchange="this.checked?selAll('clockRecords',[${fCLK.map(r=>r.id).join(',')}]):deselAll('clockRecords')"></th><th>Date</th><th>Staff</th><th>Location</th><th>Shift</th><th>Clock In</th><th>Clock Out</th><th>Hours</th><th>Report</th></tr>
+          ${fCLK.map(r=>{const s=gs(r.staffId);let h='—';if(r.clockIn&&r.clockOut){const[ih,im]=r.clockIn.split(':').map(Number);const[oh,om2]=r.clockOut.split(':').map(Number);h=((oh*60+om2-ih*60-im)/60).toFixed(2)+'h';}return`<tr style="${sel2.has(r.id)?'background:#EBF4FF':''}">
+            <td><input type="checkbox" ${sel2.has(r.id)?'checked':''} onchange="toggleSel('clockRecords',${r.id})"></td>
+            <td>${r.date}</td><td style="font-size:11px">${s?s.name:'—'}</td><td style="font-size:11px">${r.location}</td>
+            <td style="font-size:11px">${r.shift||'—'}</td><td>${r.clockIn}</td>
+            <td>${r.clockOut||'<span style="color:#0F6E56">Active</span>'}</td><td>${h}</td>
+            <td><span class="badge ${r.reportSubmitted?'bs':'bw'}" style="font-size:9px">${r.reportSubmitted?'Filed':'Pending'}</span></td>
+          </tr>`;}).join('')}
+          ${fCLK.length===0?`<tr><td colspan="9" style="text-align:center;color:#aaa;padding:1.5rem">No clock records match filters.</td></tr>`:''}
+        </table>
+      </div>`;
+  } else if(tab===3){
+    tabContent=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.75rem;flex-wrap:wrap">
+        <button class="btn" style="font-size:11px" onclick="selAll('staff',[${fSTF.map(s=>s.id).join(',')}])">Select All ${fSTF.length}</button>
+        <button class="btn" style="font-size:11px" onclick="deselAll('staff')">Deselect All</button>
+        <span style="font-size:11px;color:#666">${sel3.size} selected</span>
+        ${sel3.size>0?`<button class="btn btn-primary" style="font-size:11px;margin-left:auto" onclick="exportSelectedStaff()">⬇ Export ${sel3.size} Selected</button>`:''}
+      </div>
+      <div style="overflow-x:auto;max-height:450px;overflow-y:auto">
+        <table>
+          <tr><th style="width:32px"><input type="checkbox" ${sel3.size===fSTF.length&&fSTF.length>0?'checked':''} onchange="this.checked?selAll('staff',[${fSTF.map(s=>s.id).join(',')}]):deselAll('staff')"></th><th>Name</th><th>Role</th><th>Location</th><th>Email</th><th>Phone</th><th>Date of Hire</th><th>Training</th><th>Certifications</th></tr>
+          ${fSTF.map(s=>{const{pct}=tp(s.id);return`<tr style="${sel3.has(s.id)?'background:#EBF4FF':''}">
+            <td><input type="checkbox" ${sel3.has(s.id)?'checked':''} onchange="toggleSel('staff',${s.id})"></td>
+            <td style="font-weight:600;font-size:12px">${s.name}</td><td style="font-size:11px">${s.role}</td><td style="font-size:11px">${s.location}</td>
+            <td style="font-size:11px">${s.email}</td><td style="font-size:11px">${s.phone}</td>
+            <td style="font-size:11px">${s.startDate||'—'}</td>
+            <td><span class="badge ${pct===100?'bs':'bw'}" style="font-size:9px">${pct}%</span></td>
+            <td style="font-size:10px;color:#666">${(s.certs||[]).join(', ')||'—'}</td>
+          </tr>`;}).join('')}
+          ${fSTF.length===0?`<tr><td colspan="9" style="text-align:center;color:#aaa;padding:1.5rem">No staff match filters.</td></tr>`:''}
+        </table>
+      </div>`;
+  } else if(tab===4){
+    tabContent=`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:0.75rem;flex-wrap:wrap">
+        <button class="btn" style="font-size:11px" onclick="selAll('clients',[${fCLI.map(c=>c.id).join(',')}])">Select All ${fCLI.length}</button>
+        <button class="btn" style="font-size:11px" onclick="deselAll('clients')">Deselect All</button>
+        <span style="font-size:11px;color:#666">${sel4.size} selected</span>
+        ${sel4.size>0?`<button class="btn btn-primary" style="font-size:11px;margin-left:auto" onclick="exportSelectedClients()">⬇ Export ${sel4.size} Selected</button>`:''}
+      </div>
+      <div style="overflow-x:auto;max-height:450px;overflow-y:auto">
+        <table>
+          <tr><th style="width:32px"><input type="checkbox" ${sel4.size===fCLI.length&&fCLI.length>0?'checked':''} onchange="this.checked?selAll('clients',[${fCLI.map(c=>c.id).join(',')}]):deselAll('clients')"></th><th>Name</th><th>Diagnosis</th><th>Location</th><th>DOB</th><th>Guardian</th><th>Physician</th><th>Notes</th><th>Status</th></tr>
+          ${fCLI.map(c=>`<tr style="${sel4.has(c.id)?'background:#EBF4FF':''}">
+            <td><input type="checkbox" ${sel4.has(c.id)?'checked':''} onchange="toggleSel('clients',${c.id})"></td>
+            <td style="font-weight:600;font-size:12px">${c.name}</td><td style="font-size:11px">${c.dx}</td><td style="font-size:11px">${c.location}</td>
+            <td style="font-size:11px">${c.dob||'—'}</td><td style="font-size:11px">${c.guardian}</td><td style="font-size:11px">${c.primary}</td>
+            <td style="font-size:11px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.notes||'—'}</td>
+            <td><span class="badge bs" style="font-size:9px">${c.status}</span></td>
+          </tr>`).join('')}
+          ${fCLI.length===0?`<tr><td colspan="9" style="text-align:center;color:#aaa;padding:1.5rem">No clients match filters.</td></tr>`:''}
+        </table>
+      </div>`;
+  }
+
+  return`
+  <div class="card" style="margin-bottom:0.9rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:0.9rem">
+      <div class="card-title" style="margin:0">🔍 Filters</div>
+      <button class="btn" style="font-size:11px" onclick="S.exportFilters={dateFrom:'',dateTo:'',staffId:'',clientId:'',location:''};render()">Clear All Filters</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:0.75rem">
+      <div class="fg" style="margin:0"><label class="fl">Date From</label><input class="fi" type="date" value="${fs.dateFrom}" onchange="S.exportFilters.dateFrom=this.value;render()"></div>
+      <div class="fg" style="margin:0"><label class="fl">Date To</label><input class="fi" type="date" value="${fs.dateTo}" onchange="S.exportFilters.dateTo=this.value;render()"></div>
+      <div class="fg" style="margin:0"><label class="fl">Staff Member</label><select class="fi" onchange="S.exportFilters.staffId=this.value;render()">
+        <option value="">All Staff</option>${S.staff.map(s=>`<option value="${s.id}" ${fs.staffId==s.id?'selected':''}>${s.name}</option>`).join('')}
+      </select></div>
+      <div class="fg" style="margin:0"><label class="fl">Client</label><select class="fi" onchange="S.exportFilters.clientId=this.value;render()">
+        <option value="">All Clients</option>${S.clients.map(c=>`<option value="${c.id}" ${fs.clientId==c.id?'selected':''}>${c.name}</option>`).join('')}
+      </select></div>
+      <div class="fg" style="margin:0"><label class="fl">Location</label><select class="fi" onchange="S.exportFilters.location=this.value;render()">
+        <option value="">All Locations</option>${S.adminConfig.locations.map(l=>`<option ${fs.location===l?'selected':''}>${l}</option>`).join('')}
+      </select></div>
+    </div>
+  </div>
+
+  ${totalSel>0?`<div class="alert a-ok" style="margin-bottom:0.9rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+    <span><strong>${totalSel} row(s) selected</strong> across all tabs — ready to export</span>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <button class="btn btn-success" onclick="exportAllSelected()">⬇ Export All Selected</button>
+      <button class="btn" style="font-size:11px" onclick="if(S.exportSel)Object.keys(S.exportSel).forEach(k=>S.exportSel[k]=new Set());render()">Clear All Selections</button>
+    </div>
+  </div>`:''}
+
+  <div class="card">
+    <div class="tabs" style="margin-bottom:0.9rem">
+      ${tabDefs.map((t,i)=>`<button class="tab ${tab===i?'active':''}" onclick="S.exportTab=${i};render()">${t.icon} ${t.label} <span style="background:${tab===i?'rgba(26,58,92,0.15)':'#eee'};border-radius:20px;padding:1px 6px;font-size:10px;margin-left:2px">${t.count}${selCount(t.key)>0?' · '+selCount(t.key)+' ✓':''}</span></button>`).join('')}
+    </div>
+    ${tabContent}
+  </div>`;
+}
+
+
+function exportSelectedShiftReports(){
+  const sel=getExSel('shiftReports');
+  const rows=[['Date','Staff','Staff Email','Shift','Location','Mood','Incidents','Client','Client Mood','Client Participation','Client Notes']];
+  S.shiftReports.filter(r=>sel.has(r.id)).forEach(r=>{
+    const s=gs(r.staffId);
+    (r.clientReports||[{clientId:'',mood:'',participation:'',notes:''}]).forEach(cr=>{
+      const c=cr.clientId?gc(cr.clientId):null;
+      rows.push([r.date,s?s.name:'',s?s.email:'',r.shift||'',r.location,r.mood,r.incidents?'Yes':'No',c?c.name:'',cr.mood||'',cr.participation||'',cr.notes||'']);
+    });
+  });
+  downloadCSV('sonroc_shift_reports_selected.csv',rows);
+}
+function exportSelectedIncidents(){
+  const sel=getExSel('incidents');
+  const rows=[['Date','Time','Staff','Client','Type','Severity','Description','Follow-Up','SC Notified','SC Name','SC Date','SC Time','Mgr Notified','Mgr Name','Mgr Date','Mgr Time','Others Notified','Status']];
+  S.incidents.filter(i=>sel.has(i.id)).forEach(i=>{
+    const s=gs(i.staffId),c=gc(i.clientId),n=i.notifications||{};
+    const others=(n.others||[]).map(o=>o.name).join('; ');
+    rows.push([i.date,i.time,s?s.name:'',c?c.name:'',i.type,i.severity,i.description,i.followUp,
+      n.supportCoord&&n.supportCoord.notified?'Yes':'No',n.supportCoord&&n.supportCoord.name||'',n.supportCoord&&n.supportCoord.date||'',n.supportCoord&&n.supportCoord.time||'',
+      n.manager&&n.manager.notified?'Yes':'No',n.manager&&n.manager.name||'',n.manager&&n.manager.date||'',n.manager&&n.manager.time||'',
+      others,i.status]);
+  });
+  downloadCSV('sonroc_incidents_selected.csv',rows);
+}
+function exportSelectedClock(){
+  const sel=getExSel('clockRecords');
+  const rows=[['Date','Staff','Email','Shift','Location','Clock In','Clock Out','Hours','Report Filed']];
+  S.clockRecords.filter(r=>sel.has(r.id)).forEach(r=>{
+    const s=gs(r.staffId);let h='';
+    if(r.clockIn&&r.clockOut){const[ih,im]=r.clockIn.split(':').map(Number);const[oh,om2]=r.clockOut.split(':').map(Number);h=((oh*60+om2-ih*60-im)/60).toFixed(2);}
+    rows.push([r.date,s?s.name:'',s?s.email:'',r.shift||'',r.location,r.clockIn,r.clockOut||'',h,r.reportSubmitted?'Yes':'No']);
+  });
+  downloadCSV('sonroc_clock_selected.csv',rows);
+}
+function exportSelectedStaff(){
+  const sel=getExSel('staff');
+  const rows=[['Name','Role','Email','Phone','Location','Date of Hire','DOB','Certifications','Training %','Status']];
+  S.staff.filter(s=>sel.has(s.id)).forEach(s=>{const{pct}=tp(s.id);rows.push([s.name,s.role,s.email,s.phone,s.location,s.startDate,s.dob,(s.certs||[]).join('; '),pct+'%',s.status]);});
+  downloadCSV('sonroc_staff_selected.csv',rows);
+}
+function exportSelectedClients(){
+  const sel=getExSel('clients');
+  const rows=[['Name','Diagnosis','Location','DOB','Guardian','Primary Physician','Notes','Status']];
+  S.clients.filter(c=>sel.has(c.id)).forEach(c=>rows.push([c.name,c.dx,c.location,c.dob,c.guardian,c.primary,c.notes,c.status]));
+  downloadCSV('sonroc_clients_selected.csv',rows);
+}
+function exportAllSelected(){
+  const sel0=getExSel('shiftReports');const sel1=getExSel('incidents');
+  const sel2=getExSel('clockRecords');const sel3=getExSel('staff');const sel4=getExSel('clients');
+  if(sel0.size>0)exportSelectedShiftReports();
+  if(sel1.size>0)setTimeout(exportSelectedIncidents,200);
+  if(sel2.size>0)setTimeout(exportSelectedClock,400);
+  if(sel3.size>0)setTimeout(exportSelectedStaff,600);
+  if(sel4.size>0)setTimeout(exportSelectedClients,800);
+}
+
+function exportShiftReports(){
+  const fs=S.exportFilters||{};
+  const rows=[['Date','Staff','Staff Email','Shift','Location','Mood','Incidents','Client','Client Mood','Client Participation','Client Notes']];
+  S.shiftReports.filter(r=>{
+    if(fs.dateFrom&&r.date<fs.dateFrom)return false;
+    if(fs.dateTo&&r.date>fs.dateTo)return false;
+    if(fs.staffId&&r.staffId!=fs.staffId)return false;
+    if(fs.location&&r.location!==fs.location)return false;
+    return true;
+  }).forEach(r=>{
+    const s=gs(r.staffId);
+    (r.clientReports||[{clientId:'',mood:'',participation:'',notes:''}]).forEach(cr=>{
+      const c=cr.clientId?gc(cr.clientId):null;
+      rows.push([r.date,s?s.name:'',s?s.email:'',r.shift||'',r.location,r.mood,r.incidents?'Yes':'No',c?c.name:'',cr.mood||'',cr.participation||'',cr.notes||'']);
+    });
+  });
+  downloadCSV('sonroc_shift_reports.csv',rows);
+}
+function exportIncidents(){
+  const fs=S.exportFilters||{};
+  const rows=[['Date','Time','Staff','Client','Type','Severity','Description','Follow-Up','SC Notified','SC Name','SC Date','SC Time','Mgr Notified','Mgr Name','Mgr Date','Mgr Time','Others Notified','Status']];
+  S.incidents.filter(i=>{
+    if(fs.dateFrom&&i.date<fs.dateFrom)return false;
+    if(fs.dateTo&&i.date>fs.dateTo)return false;
+    if(fs.staffId&&i.staffId!=fs.staffId)return false;
+    if(fs.clientId&&i.clientId!=fs.clientId)return false;
+    return true;
+  }).forEach(i=>{
+    const s=gs(i.staffId),c=gc(i.clientId),n=i.notifications||{};
+    const others=(n.others||[]).map(o=>o.name).join('; ');
+    rows.push([i.date,i.time,s?s.name:'',c?c.name:'',i.type,i.severity,i.description,i.followUp,
+      n.supportCoord?.notified?'Yes':'No',n.supportCoord?.name||'',n.supportCoord?.date||'',n.supportCoord?.time||'',
+      n.manager?.notified?'Yes':'No',n.manager?.name||'',n.manager?.date||'',n.manager?.time||'',
+      others,i.status]);
+  });
+  downloadCSV('sonroc_incidents.csv',rows);
+}
+function exportClockRecords(){
+  const fs=S.exportFilters||{};
+  const rows=[['Date','Staff','Email','Shift','Location','Clock In','Clock Out','Hours','Report Filed']];
+  S.clockRecords.filter(r=>{
+    if(fs.dateFrom&&r.date<fs.dateFrom)return false;
+    if(fs.dateTo&&r.date>fs.dateTo)return false;
+    if(fs.staffId&&r.staffId!=fs.staffId)return false;
+    if(fs.location&&r.location!==fs.location)return false;
+    return true;
+  }).forEach(r=>{
+    const s=gs(r.staffId);let h='';
+    if(r.clockIn&&r.clockOut){const[ih,im]=r.clockIn.split(':').map(Number);const[oh,om2]=r.clockOut.split(':').map(Number);h=((oh*60+om2-ih*60-im)/60).toFixed(2);}
+    rows.push([r.date,s?s.name:'',s?s.email:'',r.shift||'',r.location,r.clockIn,r.clockOut||'',h,r.reportSubmitted?'Yes':'No']);
+  });
+  downloadCSV('sonroc_clock_records.csv',rows);
+}
+function exportStaff(){
+  const rows=[['Name','Role','Email','Phone','Location','Date of Hire','DOB','Certifications','Training %','Status']];
+  S.staff.forEach(s=>{const{pct}=tp(s.id);rows.push([s.name,s.role,s.email,s.phone,s.location,s.startDate,s.dob,(s.certs||[]).join('; '),pct+'%',s.status]);});
+  downloadCSV('sonroc_staff.csv',rows);
+}
+function exportClients(){
+  const rows=[['Name','Diagnosis','Location','DOB','Guardian','Primary Physician','Notes','Status']];
+  S.clients.forEach(c=>rows.push([c.name,c.dx,c.location,c.dob,c.guardian,c.primary,c.notes,c.status]));
+  downloadCSV('sonroc_clients.csv',rows);
+}
+function exportAll(){
+  exportStaff();exportClients();exportShiftReports();exportIncidents();exportClockRecords();
+  setTimeout(exportEVVcsv,300);
+}
+
+// ── EVV PAGE ──────────────────────────────────────────────
+function renderEVV(){
+  const evvFs=S.evvFilters||{dateFrom:'',dateTo:'',staffId:'',clientId:''};
+  S.evvFilters=evvFs;
+  // Build EVV visit records from clock records that have completed (clockOut exists)
+  const visits=S.clockRecords.filter(r=>{
+    if(!r.clockOut)return false;
+    if(evvFs.dateFrom&&r.date<evvFs.dateFrom)return false;
+    if(evvFs.dateTo&&r.date>evvFs.dateTo)return false;
+    if(evvFs.staffId&&r.staffId!=evvFs.staffId)return false;
+    return true;
+  });
+  return`
+  <div class="alert a-info" style="margin-bottom:0.9rem"><strong>Utah Medicaid EVV</strong> — 21st Century Cures Act compliant. Utah uses the <strong>provider choice model</strong>. Submit your EVV CSV to the UEVV portal at <strong>evv.medicaid.utah.gov</strong>. Contact: dmhf_evv@utah.gov</div>
+  <div class="card" style="margin-bottom:0.9rem">
+    <div class="card-title">Provider & Agency Info <span style="font-size:10px;font-weight:400;color:#aaa">(required for EVV submissions)</span></div>
+    <div class="g2">
+      <div class="fg"><label class="fl">Agency / Provider Name</label><input class="fi" id="evvAgency" value="${S.evvSettings?.agency||'Perfect Stay Group / Sonroc Care'}" onchange="(S.evvSettings=S.evvSettings||{}).agency=this.value"></div>
+      <div class="fg"><label class="fl">NPI (National Provider Identifier)</label><input class="fi" id="evvNPI" value="${S.evvSettings?.npi||''}" placeholder="10-digit NPI" onchange="(S.evvSettings=S.evvSettings||{}).npi=this.value"></div>
+    </div>
+    <div class="g2">
+      <div class="fg"><label class="fl">Medicaid Provider ID</label><input class="fi" id="evvProvID" value="${S.evvSettings?.provId||''}" placeholder="Utah Medicaid Provider ID" onchange="(S.evvSettings=S.evvSettings||{}).provId=this.value"></div>
+      <div class="fg"><label class="fl">Default Service Code (HCPCS)</label><select class="fi" id="evvSvcCode" onchange="(S.evvSettings=S.evvSettings||{}).svcCode=this.value">
+        <option value="S5125" ${(S.evvSettings?.svcCode||'S5125')==='S5125'?'selected':''}>S5125 — Personal Assistant Services (PCS)</option>
+        <option value="S5126" ${S.evvSettings?.svcCode==='S5126'?'selected':''}>S5126 — Personal Assistance / Attendant Care</option>
+        <option value="S5120" ${S.evvSettings?.svcCode==='S5120'?'selected':''}>S5120 — Chore Services</option>
+        <option value="S5115" ${S.evvSettings?.svcCode==='S5115'?'selected':''}>S5115 — Caregiver Training</option>
+        <option value="G0299" ${S.evvSettings?.svcCode==='G0299'?'selected':''}>G0299 — Home Health RN (HHS)</option>
+        <option value="G0300" ${S.evvSettings?.svcCode==='G0300'?'selected':''}>G0300 — Home Health LPN (HHS)</option>
+      </select></div>
+    </div>
+    <div class="g2">
+      <div class="fg"><label class="fl">Service Location Address</label><input class="fi" id="evvAddr" value="${S.evvSettings?.address||''}" placeholder="Street address of service location" onchange="(S.evvSettings=S.evvSettings||{}).address=this.value"></div>
+      <div class="fg"><label class="fl">City</label><input class="fi" id="evvCity" value="${S.evvSettings?.city||''}" placeholder="e.g. Salt Lake City" onchange="(S.evvSettings=S.evvSettings||{}).city=this.value"></div>
+    </div>
+    <button class="btn btn-success" style="font-size:11px" onclick="saveEVVSettings()">Save Provider Settings</button>
+  </div>
+  <div class="card" style="margin-bottom:0.9rem">
+    <div class="card-title">🔍 Filter Visit Records</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:0.75rem">
+      <div class="fg" style="margin:0"><label class="fl">Date From</label><input class="fi" type="date" id="evf_from" value="${evvFs.dateFrom}" onchange="S.evvFilters.dateFrom=this.value;render()"></div>
+      <div class="fg" style="margin:0"><label class="fl">Date To</label><input class="fi" type="date" id="evf_to" value="${evvFs.dateTo}" onchange="S.evvFilters.dateTo=this.value;render()"></div>
+      <div class="fg" style="margin:0"><label class="fl">Caregiver</label><select class="fi" onchange="S.evvFilters.staffId=this.value;render()">
+        <option value="">All</option>${S.staff.map(s=>`<option value="${s.id}" ${evvFs.staffId==s.id?'selected':''}>${s.name}</option>`).join('')}
+      </select></div>
+      <div class="fg" style="margin:0"><label class="fl">Client</label><select class="fi" onchange="S.evvFilters.clientId=this.value;render()">
+        <option value="">All</option>${S.clients.map(c=>`<option value="${c.id}" ${evvFs.clientId==c.id?'selected':''}>${c.name}</option>`).join('')}
+      </select></div>
+    </div>
+    <div style="margin-top:6px"><button class="btn" style="font-size:11px" onclick="S.evvFilters={dateFrom:'',dateTo:'',staffId:'',clientId:''};render()">Clear</button></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.9rem;flex-wrap:wrap;gap:8px">
+      <div><div class="card-title" style="margin:0">EVV Visit Records <span style="font-size:11px;font-weight:400;color:#aaa">(${visits.length} completed visits)</span></div>
+        <div style="font-size:11px;color:#888;margin-top:2px">Per UEVV Technical Specifications v1.7 — 21st Century Cures Act required fields</div>
+      </div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="exportEVVcsv()">⬇ Export EVV CSV for UEVV Portal</button>
+        <a href="https://evv.medicaid.utah.gov/evvsubmit/" target="_blank" class="btn btn-success" style="text-decoration:none;font-size:12px">🔗 Open UEVV Portal</a>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <tr>
+          <th>Visit Date</th><th>Caregiver</th><th>Caregiver NPI/ID</th><th>Client</th><th>Client Medicaid ID</th><th>Service Code</th><th>Start Time</th><th>End Time</th><th>Duration</th><th>Service Location</th><th>EVV Status</th>
+        </tr>
+        ${visits.length===0?`<tr><td colspan="11" style="text-align:center;color:#aaa;padding:1.5rem">No completed visits match current filters.</td></tr>`:''}
+        ${visits.map(r=>{
+          const s=gs(r.staffId);
+          // Try to match client from shift reports on same date/shift
+          const rpt=S.shiftReports.find(x=>x.staffId===r.staffId&&x.date===r.date);
+          const clients=rpt&&rpt.clientReports?rpt.clientReports.map(cr=>gc(cr.clientId)).filter(Boolean):[];
+          // If clientId filter active, only show that client
+          const showClients=evvFs.clientId?clients.filter(c=>c.id==evvFs.clientId):clients;
+          const svcCode=S.evvSettings?.svcCode||'S5125';
+          const addr=S.evvSettings?.address?S.evvSettings.address+(S.evvSettings.city?', '+S.evvSettings.city:''):r.location;
+          let hrs='';if(r.clockIn&&r.clockOut){const[ih,im]=r.clockIn.split(':').map(Number);const[oh,om2]=r.clockOut.split(':').map(Number);hrs=((oh*60+om2-ih*60-im)/60).toFixed(2)+'h';}
+          const missingNPI=!s?.evvNPI;const missingMedID=showClients.some(c=>!c.medicaidId);
+          const status=missingNPI||missingMedID?'⚠ Missing IDs':'✓ Ready';
+          // Render one row per client, or one row if no clients linked
+          const rowClients=showClients.length>0?showClients:[null];
+          return rowClients.map(c=>`<tr>
+            <td>${r.date}</td>
+            <td style="font-size:11px">${s?s.name:'—'}</td>
+            <td><input class="fi" style="width:110px;font-size:10px;padding:3px 6px" placeholder="NPI/ID" value="${s?.evvNPI||''}" onchange="const st=S.staff.find(x=>x.id===${r.staffId});if(st)st.evvNPI=this.value"></td>
+            <td style="font-size:11px">${c?c.name:'—'}</td>
+            <td>${c?`<input class="fi" style="width:110px;font-size:10px;padding:3px 6px" placeholder="Medicaid ID" value="${c.medicaidId||''}" onchange="const cl=S.clients.find(x=>x.id===${c.id});if(cl)cl.medicaidId=this.value">`:'<span style="color:#aaa">—</span>'}</td>
+            <td><select class="fi" style="font-size:10px;padding:3px 5px;width:80px" onchange="(S.evvSettings=S.evvSettings||{}).svcCode=this.value">
+              ${['S5125','S5126','S5120','S5115','G0299','G0300'].map(cd=>`<option ${svcCode===cd?'selected':''}>${cd}</option>`).join('')}
+            </select></td>
+            <td>${r.clockIn}</td><td>${r.clockOut||'—'}</td><td>${hrs}</td>
+            <td style="font-size:10px;max-width:120px;overflow:hidden">${addr}</td>
+            <td><span class="badge ${status.includes('✓')?'bs':'bw'}" style="font-size:10px;white-space:nowrap">${status}</span></td>
+          </tr>`).join('');
+        }).join('')}
+      </table>
+    </div>
+    <div class="alert a-warn" style="margin-top:0.9rem;font-size:11px">
+      <strong>Required EVV fields per UEVV Spec v1.7:</strong> Caregiver NPI/ID · Client Medicaid ID · Service Code (HCPCS) · Service Date · Start Time · End Time · Service Location (address or GPS). Enter missing IDs above then export. Submit the CSV at <strong>evv.medicaid.utah.gov</strong>. Questions: dmhf_evv@utah.gov
+    </div>
+  </div>`;
+}
+
+function saveEVVSettings(){
+  S.evvSettings=S.evvSettings||{};
+  S.evvSettings.agency=document.getElementById('evvAgency')?.value||'';
+  S.evvSettings.npi=document.getElementById('evvNPI')?.value||'';
+  S.evvSettings.provId=document.getElementById('evvProvID')?.value||'';
+  S.evvSettings.svcCode=document.getElementById('evvSvcCode')?.value||'S5125';
+  S.evvSettings.address=document.getElementById('evvAddr')?.value||'';
+  S.evvSettings.city=document.getElementById('evvCity')?.value||'';
+  alert('Provider settings saved.');
+}
+
+function exportEVVcsv(){
+  const evvFs=S.evvFilters||{};
+  // Required UEVV CSV columns per Technical Spec v1.7
+  const rows=[['provider_npi(req)','provider_id(req)','caregiver_id(req)','caregiver_npi','member_medicaid_id(req)','service_code(req)','service_date(req)','begin_time(req)','end_time(req)','begin_address1','begin_city','end_address1','end_city','agency_name']];
+  const npi=S.evvSettings?.npi||'';
+  const provId=S.evvSettings?.provId||'';
+  const agency=S.evvSettings?.agency||'Perfect Stay Group';
+  const svcCode=S.evvSettings?.svcCode||'S5125';
+  const addr=S.evvSettings?.address||'';
+  const city=S.evvSettings?.city||'';
+  S.clockRecords.filter(r=>{
+    if(!r.clockOut)return false;
+    if(evvFs.dateFrom&&r.date<evvFs.dateFrom)return false;
+    if(evvFs.dateTo&&r.date>evvFs.dateTo)return false;
+    if(evvFs.staffId&&r.staffId!=evvFs.staffId)return false;
+    return true;
+  }).forEach(r=>{
+    const s=gs(r.staffId);
+    const rpt=S.shiftReports.find(x=>x.staffId===r.staffId&&x.date===r.date);
+    const clients=rpt&&rpt.clientReports?rpt.clientReports.map(cr=>gc(cr.clientId)).filter(Boolean):[];
+    const rowClients=clients.length>0?clients:[null];
+    rowClients.forEach(c=>{
+      if(evvFs.clientId&&c&&c.id!=evvFs.clientId)return;
+      rows.push([
+        npi,provId,
+        s?s.id:'',s?.evvNPI||'',
+        c?.medicaidId||'',
+        svcCode,r.date,
+        r.clockIn,r.clockOut,
+        addr,city,addr,city,agency
+      ]);
+    });
+  });
+  downloadCSV('sonroc_evv_utah_'+new Date().toISOString().slice(0,10)+'.csv',rows);
+}
+
+// ── AUDIT LOG PAGE ───────────────────────────────────────
+function renderAuditLog(){
+  if(!isAdmin())return`<div class="card"><div class="alert a-err">Admin access only.</div></div>`;
+  const af=S.auditFilter||{search:'',category:'',role:'',dateFrom:'',dateTo:''};
+  S.auditFilter=af;
+  const cats=[...new Set((S.auditLog||[]).map(e=>e.category))].sort();
+  const filtered=(S.auditLog||[]).filter(e=>{
+    if(af.search&&!e.action.toLowerCase().includes(af.search.toLowerCase())&&!e.detail.toLowerCase().includes(af.search.toLowerCase())&&!e.who.toLowerCase().includes(af.search.toLowerCase()))return false;
+    if(af.category&&e.category!==af.category)return false;
+    if(af.role&&e.role!==af.role)return false;
+    return true;
+  });
+  const catColor={
+    'Time Clock':'#0F6E56','Schedule':'#185FA5','Reports':'#4B1528',
+    'Incidents':'#A32D2D','Staff':'#1a3a5c','Clients':'#3B6D11',
+    'Training':'#854F0B','Security':'#7B3F00','Settings':'#5F5E5A',
+    'Import':'#0F4C81','Time Off':'#639922'
+  };
+  return`
+  <div class="alert a-info" style="margin-bottom:0.9rem">Every action taken in the app is recorded here — who did it, when, and what changed. Admin view only. Capped at 1,000 most recent entries.</div>
+  <div class="card" style="margin-bottom:0.9rem">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:0.9rem">
+      <div class="card-title" style="margin:0">🔍 Filter</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap">
+        <button class="btn" style="font-size:11px" onclick="exportAuditLog()">⬇ Export Audit Log CSV</button>
+        <button class="btn btn-danger" style="font-size:11px" onclick="if(confirm('Clear entire audit log? This cannot be undone.')){S.auditLog=[];render()}">Clear Log</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:0.75rem">
+      <div class="fg" style="margin:0"><label class="fl">Search</label><input class="fi" placeholder="Action, detail, or who..." value="${af.search}" oninput="S.auditFilter.search=this.value;render()"></div>
+      <div class="fg" style="margin:0"><label class="fl">Category</label><select class="fi" onchange="S.auditFilter.category=this.value;render()">
+        <option value="">All Categories</option>${cats.map(c=>`<option ${af.category===c?'selected':''}>${c}</option>`).join('')}
+      </select></div>
+      <div class="fg" style="margin:0"><label class="fl">Role</label><select class="fi" onchange="S.auditFilter.role=this.value;render()">
+        <option value="">All Roles</option>
+        <option value="admin" ${af.role==='admin'?'selected':''}>Admin</option>
+        <option value="manager" ${af.role==='manager'?'selected':''}>Manager</option>
+        <option value="dsp" ${af.role==='dsp'?'selected':''}>DSP</option>
+      </select></div>
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:#888">${filtered.length} of ${(S.auditLog||[]).length} entries</div>
+  </div>
+  <div class="card" style="padding:0;overflow:hidden">
+    <table>
+      <tr><th>Timestamp</th><th>Who</th><th>Category</th><th>Action</th><th>Detail</th></tr>
+      ${filtered.length===0?`<tr><td colspan="5" style="text-align:center;color:#aaa;padding:2rem">${(S.auditLog||[]).length===0?'No activity recorded yet. Actions you take in the app will appear here.':'No entries match current filters.'}</td></tr>`:''}
+      ${filtered.map(e=>{
+        const col=catColor[e.category]||'#5F5E5A';
+        const roleBadge=e.role==='admin'?'bi':e.role==='manager'?'bs':'bw';
+        return`<tr>
+          <td style="font-size:11px;color:#888;white-space:nowrap">${e.ts}</td>
+          <td style="font-size:11px;font-weight:600;white-space:nowrap">${e.who}</td>
+          <td><span class="badge" style="background:${col}22;color:${col};font-size:10px;white-space:nowrap">${e.category}</span></td>
+          <td style="font-size:12px;font-weight:600">${e.action}</td>
+          <td style="font-size:11px;color:#666;max-width:300px">${e.detail}</td>
+        </tr>`;
+      }).join('')}
+    </table>
+  </div>`;
+}
+
+function exportAuditLog(){
+  const rows=[['Timestamp','Who','Role','Category','Action','Detail']];
+  (S.auditLog||[]).forEach(e=>rows.push([e.ts,e.who,e.role,e.category,e.action,e.detail]));
+  downloadCSV('sonroc_audit_log_'+new Date().toISOString().slice(0,10)+'.csv',rows);
+}
+
+
+// ── PAY RATES PAGE (Admin Only) ─────────────────────────
+function renderPayRates(){
+  if(!isAdmin())return`<div class="card"><div class="alert a-err">Admin access only.</div></div>`;
+  return`
+  <div class="alert a-info" style="margin-bottom:0.9rem">Set hourly rates, salary, and overtime rates for each staff member. Only you (Admin) can view or edit pay information.</div>
+  <div class="card">
+    <div class="card-title">Staff Pay Rates</div>
+    <div style="overflow-x:auto">
+      <table>
+        <tr><th>Staff</th><th>Role</th><th>Location</th><th>Pay Type</th><th>Rate</th><th>Overtime Rate</th><th></th></tr>
+        ${S.staff.map(s=>{
+          return`<tr>
+            <td style="font-weight:600">${s.name}</td>
+            <td style="font-size:11px">${s.role}</td>
+            <td style="font-size:11px">${s.location}</td>
+            <td><span class="badge ${s.payType==='salary'?'bi':'bs'}" style="font-size:10px">${s.payType==='salary'?'Salary':'Hourly'}</span></td>
+            <td style="font-weight:600">${s.payType==='salary'?'$'+Number(s.payRate||0).toLocaleString()+'/yr':'$'+(s.payRate||0).toFixed(2)+'/hr'}</td>
+            <td>${s.payType==='hourly'&&s.overtimeRate?'$'+s.overtimeRate.toFixed(2)+'/hr':'—'}</td>
+            <td><button class="btn" style="font-size:11px;padding:3px 8px" onclick="S.modalCtx={staffId:${s.id}};om('editPay')">Edit</button></td>
+          </tr>`;
+        }).join('')}
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Quick Summary</div>
+    <div class="g3">
+      <div class="metric"><div class="metric-val">${S.staff.filter(s=>s.payType==='hourly').length}</div><div class="metric-lbl">Hourly Staff</div></div>
+      <div class="metric"><div class="metric-val">${S.staff.filter(s=>s.payType==='salary').length}</div><div class="metric-lbl">Salaried Staff</div></div>
+      <div class="metric"><div class="metric-val">$${S.staff.filter(s=>s.payType==='hourly').length>0?(S.staff.filter(s=>s.payType==='hourly').reduce((a,s)=>a+(s.payRate||0),0)/S.staff.filter(s=>s.payType==='hourly').length).toFixed(2):'0'}</div><div class="metric-lbl">Avg Hourly Rate</div></div>
+    </div>
+  </div>`;
+}
+
+// ── MAR PAGE ────────────────────────────────────────────
+function renderMAR(){
+  const month=S.marMonth||new Date().toISOString().slice(0,7);
+  S.marMonth=month;
+  const viewClient=S.marViewClient;
+  const readOnly=S.role==='manager';
+
+  if(viewClient){
+    const c=gc(viewClient);if(!c)return'';
+    const meds=(S.medications[viewClient]||[]).filter(m=>m.active);
+    const[yr,mo]=month.split('-').map(Number);
+    const daysInMonth=new Date(yr,mo,0).getDate();
+    const dayNums=Array.from({length:daysInMonth},(_,i)=>i+1);
+    const monthEntries=S.marEntries.filter(e=>e.clientId===viewClient&&e.givenDate&&e.givenDate.startsWith(month));
+
+    return`
+    <button class="btn" onclick="S.marViewClient=null;render()">← All Clients</button>
+    <div class="card" style="margin-top:0.9rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1rem">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="avatar" style="width:42px;height:42px;font-size:15px">${ini(c.name)}</div>
+          <div><div style="font-size:15px;font-weight:600">${c.name}</div><div style="font-size:12px;color:#666">${c.dx} · ${c.location}</div></div>
+        </div>
+        <div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap">
+          <button class="btn" style="font-size:11px" onclick="const[y,m]=S.marMonth.split('-').map(Number);const d=new Date(y,m-2,1);S.marMonth=d.toISOString().slice(0,7);render()">← Prev</button>
+          <input class="fi" type="month" value="${month}" style="width:150px" onchange="S.marMonth=this.value;render()">
+          <button class="btn" style="font-size:11px" onclick="const[y,m]=S.marMonth.split('-').map(Number);const d=new Date(y,m,1);S.marMonth=d.toISOString().slice(0,7);render()">Next →</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:7px;margin-bottom:0.9rem;flex-wrap:wrap">
+        ${!readOnly?`<button class="btn btn-primary" style="font-size:11px" onclick="om('addMAREntry',{clientId:${viewClient}})">+ Record Administration</button>`:''}
+        ${isAdmin()?`<button class="btn" style="font-size:11px" onclick="om('addMed',{clientId:${viewClient}})">+ Add Medication</button>`:''}
+        <button class="btn" style="font-size:11px" onclick="exportMAR(${viewClient})">⬇ Export MAR CSV</button>
+        <button class="btn" style="font-size:11px" onclick="exportMARprintable(${viewClient})">🖨 Print View</button>
+      </div>
+
+      ${readOnly?`<div class="read-only-banner">👁 Managers can view MAR but cannot record administrations.</div>`:''}
+
+      <div style="font-size:13px;font-weight:600;margin-bottom:0.75rem">Active Medications</div>
+      ${meds.length===0?`<div style="font-size:12px;color:#aaa;margin-bottom:1rem">No active medications. Admin can add medications above.</div>`:''}
+      ${meds.map(m=>`
+        <div style="border:0.5px solid rgba(0,0,0,0.1);border-left:3px solid #185FA5;border-radius:7px;padding:0.75rem;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px">
+          <div>
+            <div style="font-size:13px;font-weight:600">${m.name} <span style="font-weight:400;color:#666">— ${m.dose}</span></div>
+            <div style="font-size:11px;color:#888">${m.route} · ${m.frequency} · Scheduled: ${m.scheduledTimes.join(', ')} · Prescriber: ${m.prescriber}</div>
+          </div>
+          ${isAdmin()?`<button class="btn btn-danger" style="font-size:10px;padding:2px 7px" onclick="(S.medications[${viewClient}]||[]).find(x=>x.id===${m.id}).active=false;audit('MAR','Medication Discontinued',c.name+' · '+m.name);render()">Discontinue</button>`:''}
+        </div>`).join('')}
+
+      <hr>
+      <div style="font-size:13px;font-weight:600;margin-bottom:0.75rem">Administration Log — ${new Date(yr,mo-1).toLocaleString('default',{month:'long',year:'numeric'})}</div>
+      <div style="overflow-x:auto">
+        <table>
+          <tr><th>Date</th><th>Medication</th><th>Dose</th><th>Route</th><th>Scheduled</th><th>Given At</th><th>Staff</th><th>Status</th><th>Notes</th></tr>
+          ${monthEntries.length===0?`<tr><td colspan="9" style="text-align:center;color:#aaa;padding:1.5rem">No entries for this month.</td></tr>`:''}
+          ${monthEntries.sort((a,b)=>(a.givenDate+a.scheduledTime).localeCompare(b.givenDate+b.scheduledTime)).map(e=>{
+            const staff=gs(e.staffId);
+            const statusBadge=e.status==='Given'?'bs':e.status==='Refused'?'bd':e.status==='Held'?'bw':'bg';
+            return`<tr>
+              <td>${e.givenDate}</td>
+              <td style="font-weight:600;font-size:12px">${e.medName}</td>
+              <td>${e.dose}</td><td>${e.route}</td>
+              <td>${e.scheduledTime}</td>
+              <td>${e.givenTime||'—'}</td>
+              <td style="font-size:11px">${staff?staff.name:'—'}</td>
+              <td><span class="badge ${statusBadge}" style="font-size:10px">${e.status}</span></td>
+              <td style="font-size:11px;color:#666;max-width:180px">${e.notes||''}${e.refusalReason?' · Reason: '+e.refusalReason:''}</td>
+            </tr>`;
+          }).join('')}
+        </table>
+      </div>
+    </div>`;
+  }
+
+  // Client list view
+  return`
+  <div class="sec-hdr">
+    <div style="font-size:12px;color:#666">Select a client to view their Medication Administration Record</div>
+    <div style="display:flex;gap:7px;align-items:center">
+      <input class="fi" type="month" value="${month}" style="width:150px" onchange="S.marMonth=this.value;render()">
+      <button class="btn" style="font-size:11px" onclick="exportAllMAR()">⬇ Export All MAR</button>
+    </div>
+  </div>
+  <div class="g2">
+    ${S.clients.map(c=>{
+      const meds=(S.medications[c.id]||[]).filter(m=>m.active);
+      const monthEntries=S.marEntries.filter(e=>e.clientId===c.id&&e.givenDate&&e.givenDate.startsWith(month));
+      const lastEntry=monthEntries.length>0?monthEntries[monthEntries.length-1]:null;
+      return`<div class="card" style="cursor:pointer" onclick="S.marViewClient=${c.id};render()">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.75rem">
+          <div class="avatar" style="width:40px;height:40px;font-size:14px">${ini(c.name)}</div>
+          <div style="flex:1"><div style="font-weight:600;font-size:14px">${c.name}</div><div style="font-size:11px;color:#666">${c.dx} · ${c.location}</div></div>
+        </div>
+        <div class="dr"><span class="dl">Active Medications</span><span class="badge bi" style="font-size:10px">${meds.length}</span></div>
+        <div class="dr"><span class="dl">Entries This Month</span><span>${monthEntries.length}</span></div>
+        <div class="dr"><span class="dl">Last Administered</span><span style="font-size:11px">${lastEntry?lastEntry.givenDate+' '+lastEntry.givenTime:'—'}</span></div>
+        ${meds.length>0?`<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:3px">${meds.map(m=>`<span class="pill on">${m.name} ${m.dose}</span>`).join('')}</div>`:''}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function exportMAR(clientId){
+  const c=gc(clientId);
+  const month=S.marMonth||'';
+  const entries=S.marEntries.filter(e=>e.clientId===clientId&&(!month||e.givenDate.startsWith(month)));
+  const rows=[['Client','Date','Medication','Dose','Route','Scheduled Time','Given Time','Staff','Status','Notes','Refusal Reason']];
+  entries.forEach(e=>{const staff=gs(e.staffId);rows.push([c?c.name:'',e.givenDate,e.medName,e.dose,e.route,e.scheduledTime,e.givenTime||'',staff?staff.name:'',e.status,e.notes||'',e.refusalReason||'']);});
+  downloadCSV('sonroc_MAR_'+(c?c.name.replace(/\s/g,'_'):'')+'_'+month+'.csv',rows);
+}
+function exportAllMAR(){
+  const month=S.marMonth||'';
+  const rows=[['Client','Date','Medication','Dose','Route','Scheduled Time','Given Time','Staff','Status','Notes','Refusal Reason']];
+  S.marEntries.filter(e=>!month||e.givenDate.startsWith(month)).forEach(e=>{const c=gc(e.clientId);const staff=gs(e.staffId);rows.push([c?c.name:'',e.givenDate,e.medName,e.dose,e.route,e.scheduledTime,e.givenTime||'',staff?staff.name:'',e.status,e.notes||'',e.refusalReason||'']);});
+  downloadCSV('sonroc_MAR_all_'+month+'.csv',rows);
+}
+function exportMARprintable(clientId){
+  const c=gc(clientId);if(!c)return;
+  const month=S.marMonth||'';
+  const meds=(S.medications[clientId]||[]).filter(m=>m.active);
+  const entries=S.marEntries.filter(e=>e.clientId===clientId&&e.givenDate.startsWith(month));
+  let html='<html><head><title>MAR - '+c.name+' - '+month+'</title><style>body{font-family:Arial,sans-serif;font-size:11px;padding:20px}h1{font-size:16px}h2{font-size:13px;margin-top:16px}table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #ccc;padding:4px 6px;text-align:left}th{background:#f0f0f0;font-size:10px}</style></head><body>';
+  html+='<h1>Medication Administration Record</h1>';
+  html+='<p><strong>Client:</strong> '+c.name+' | <strong>DOB:</strong> '+(c.dob||'—')+' | <strong>Location:</strong> '+c.location+' | <strong>Month:</strong> '+month+'</p>';
+  html+='<h2>Active Medications</h2><table><tr><th>Medication</th><th>Dose</th><th>Route</th><th>Frequency</th><th>Scheduled</th><th>Prescriber</th></tr>';
+  meds.forEach(m=>{html+='<tr><td>'+m.name+'</td><td>'+m.dose+'</td><td>'+m.route+'</td><td>'+m.frequency+'</td><td>'+m.scheduledTimes.join(', ')+'</td><td>'+m.prescriber+'</td></tr>';});
+  html+='</table><h2>Administration Log</h2><table><tr><th>Date</th><th>Medication</th><th>Dose</th><th>Scheduled</th><th>Given</th><th>Staff</th><th>Status</th><th>Notes</th></tr>';
+  entries.forEach(e=>{const staff=gs(e.staffId);html+='<tr><td>'+e.givenDate+'</td><td>'+e.medName+'</td><td>'+e.dose+'</td><td>'+e.scheduledTime+'</td><td>'+(e.givenTime||'—')+'</td><td>'+(staff?staff.name:'—')+'</td><td>'+e.status+'</td><td>'+(e.notes||'')+(e.refusalReason?' Reason: '+e.refusalReason:'')+'</td></tr>';});
+  html+='</table><p style="margin-top:20px;font-size:10px;color:#888">Generated '+new Date().toLocaleString()+' — Sonroc Care / Perfect Stay Group</p></body></html>';
+  const w=window.open('','_blank');if(w){w.document.write(html);w.document.close();w.print();}
+}
+
+// ── MAIN RENDER ───────────────────────────────────────────
+function render(){
+  const pages=[
+    {id:'dashboard',icon:'▦',label:'Dashboard'},
+    {id:'timeclock',icon:'◷',label:'Time Clock'},
+    {id:'staff',icon:'◈',label:'Staff'},
+    {id:'clients',icon:'◉',label:'Clients'},
+    {id:'schedule',icon:'▤',label:'Schedule'},
+    {id:'reports',icon:'▨',label:'Reports'},
+    {id:'training',icon:'◆',label:'Training'},
+    {id:'mar',icon:'💊',label:'MAR'},
+    ...(isAdmin()?[
+      {id:'adminConfig',icon:'⚙',label:'App Settings'},
+      {id:'payRates',icon:'💰',label:'Pay Rates'},
+      {id:'auditLog',icon:'📋',label:'Audit Log'},
+      {id:'importData',icon:'⬆',label:'Import Data'},
+      {id:'exportReports',icon:'⬇',label:'Export & Reports'},
+      {id:'evv',icon:'✦',label:'EVV — Utah Medicaid'},
+    ]:[]),
+  ];
+  const titles={dashboard:'Dashboard',timeclock:'Time Clock',staff:'Staff',clients:'Clients',schedule:'Schedule',reports:'Reports',training:'Training',mar:'MAR',adminConfig:'App Settings',payRates:'Pay Rates',importData:'Import Data',exportReports:'Export & Reports',evv:'EVV — Utah Medicaid',auditLog:'Audit Log'};
+  let main='';
+  if(S.page==='dashboard')main=renderDashboard();
+  else if(S.page==='timeclock')main=renderTimeclock();
+  else if(S.page==='staff')main=renderStaff();
+  else if(S.page==='clients')main=renderClients();
+  else if(S.page==='schedule')main=renderSchedule();
+  else if(S.page==='reports')main=renderReports();
+  else if(S.page==='training')main=renderTraining();
+  else if(S.page==='adminConfig')main=renderAdminConfig();
+  else if(S.page==='payRates')main=renderPayRates();
+  else if(S.page==='mar')main=renderMAR();
+  else if(S.page==='importData')main=renderImport();
+  else if(S.page==='exportReports')main=renderExport();
+  else if(S.page==='evv')main=renderEVV();
+  else if(S.page==='auditLog')main=renderAuditLog();
+
+  const ac=activeClass();
+  document.getElementById('root').innerHTML=`
+    <div class="sidebar">
+      <div class="logo"><div class="logo-name">Sonroc Care</div><div class="logo-sub">Perfect Stay Group</div></div>
+      ${isAdmin()?`<div class="role-toggle">
+        <button class="role-btn ${S.role==='admin'?'active-admin':''}" onclick="S.role='admin';S.page='dashboard';render()">Admin</button>
+        <button class="role-btn ${S.role==='manager'?'active-manager':''}" onclick="S.role='manager';S.page='dashboard';render()">Mgr</button>
+        <button class="role-btn ${S.role==='dsp'?'active-dsp':''}" onclick="S.role='dsp';S.page='dashboard';render()">DSP</button>
+      </div>`:''}
+      <div class="nav-section">
+        ${pages.map(p=>`<button class="nav-item ${S.page===p.id?ac:''}" onclick="S.currentTrainStaff=null;nav('${p.id}')">${p.icon} ${p.label}</button>`).join('')}
+      </div>
+      <div class="user-bar">
+        <div class="avatar" style="width:28px;height:28px;font-size:10px;background:${roleColor()}">${currentProfile?ini(currentProfile.name):'?'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;font-weight:600;color:${roleColor()};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${currentProfile?currentProfile.name:S.currentUserEmail||'User'}</div>
+          <div style="font-size:10px;color:#aaa">${roleLabel()}</div>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()">Sign out</button>
+      </div>
+    </div>
+    <div class="main">
+      <div class="topbar"><div class="page-title">${titles[S.page]||''}</div><span class="role-badge ${S.role}">${currentProfile?currentProfile.name:''} · ${roleLabel()}</span></div>
+      <div class="content">${main}</div>
+    </div>
+    ${renderModal()}`;
+
+  if(S.modal==='quiz'&&S.currentTrainStaff){
+    const c=document.querySelector('.content');
+    if(c)c.innerHTML=renderTraining();
+  }
+}
+// Start with auth check instead of direct render
+initAuth();
+</script></body></html>
