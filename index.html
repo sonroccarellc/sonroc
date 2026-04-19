@@ -122,9 +122,14 @@ input[type=checkbox]{accent-color:#1a3a5c;width:13px;height:13px}
 .user-bar{display:flex;align-items:center;gap:8px;padding:0.75rem 1rem;border-top:0.5px solid rgba(0,0,0,0.1);margin-top:auto}
 .logout-btn{font-size:11px;color:#A32D2D;cursor:pointer;border:none;background:none;font-family:inherit;text-decoration:underline}
 
-.ss[draggable=true]:hover{opacity:0.85;box-shadow:0 2px 6px rgba(0,0,0,0.15)}
-.ss[draggable=true]:active{opacity:0.6;cursor:grabbing}
-.sc[ondrop]:hover{background:rgba(26,58,92,0.04)}
+.ss{position:relative}
+.ss-actions{display:none;gap:2px;margin-top:2px;font-size:10px}
+.ss:hover .ss-actions{display:flex}
+.ss-actions span{cursor:pointer;background:rgba(255,255,255,0.35);border-radius:3px;padding:0 3px;line-height:1.4}
+.ss-actions span:hover{background:rgba(255,255,255,0.7)}
+.ss-copied{outline:2px solid #FAC775;outline-offset:-1px}
+.ss-paste{border:1.5px dashed #185FA5;border-radius:3px;padding:2px 4px;font-size:9px;color:#185FA5;cursor:pointer;text-align:center;margin-top:2px;opacity:0.6}
+.ss-paste:hover{opacity:1;background:rgba(26,58,92,0.06)}
 </style></head><body>
 <div class="app" id="root"></div>
 
@@ -900,84 +905,99 @@ function renderClients(){
   </div>`;
 }
 
-// ── SCHEDULE DRAG & DROP + DUPLICATE ──────────────────────
-let dragData=null;
+// ── SCHEDULE ACTIONS: COPY, MOVE, REMOVE ─────────────────
+S.selectedShift=null; // {staffId, day, shiftIdx} — for copy/paste
+S.copiedShift=null;   // the actual shift object for pasting
 
-function schedDragStart(staffId,day,shiftIdx,e){
-  if(S.role==='dsp')return;
-  dragData={staffId,day,shiftIdx};
-  if(e&&e.dataTransfer){e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','shift');}
-}
-function schedDragOver(e){if(e)e.preventDefault();}
-function schedDrop(staffId,targetDay,e){
-  if(e)e.preventDefault();
-  if(!dragData||S.role==='dsp')return;
-  const src=dragData;dragData=null;
-  // Get the source shift
-  const srcShifts=S.schedule[src.staffId]&&S.schedule[src.staffId][src.day];
-  if(!srcShifts)return;
-  const srcArr=Array.isArray(srcShifts)?srcShifts:[srcShifts];
-  const shift=srcArr[src.shiftIdx];
+function copyShift(staffId,day,shiftIdx){
+  const shifts=S.schedule[staffId]&&S.schedule[staffId][day];
+  if(!shifts)return;
+  const arr=Array.isArray(shifts)?shifts:[shifts];
+  const shift=arr[shiftIdx];
   if(!shift)return;
-  // Check permissions
-  if(!canEditLoc(shift.location)){alert('You can only edit locations you manage.');return;}
-  // Check RTO
-  const rto=getRTO(staffId,targetDay);
-  if(rto){alert('Cannot move shift: '+gs(staffId)?.name+' has approved time off on '+targetDay);return;}
-  // Check overlap at target
-  const conflict=getOverlap(staffId,targetDay,shift.startTime,shift.endTime);
-  if(conflict){alert('Conflict at target: '+conflict);return;}
-  // Move: remove from source
-  if(srcArr.length<=1){delete S.schedule[src.staffId][src.day];}
-  else{srcArr.splice(src.shiftIdx,1);}
-  // Add to target
-  if(!S.schedule[staffId])S.schedule[staffId]={};
-  const tgt=S.schedule[staffId][targetDay];
-  const newShift={...shift,createdBy:isAdmin()?1:2};
-  if(!tgt)S.schedule[staffId][targetDay]=[newShift];
-  else if(Array.isArray(tgt))tgt.push(newShift);
-  else S.schedule[staffId][targetDay]=[tgt,newShift];
-  audit('Schedule','Shift Moved',gs(src.staffId)?.name+' · '+src.day+' → '+gs(staffId)?.name+' · '+targetDay+' '+shift.startTime+'-'+shift.endTime+' @ '+shift.location);
+  S.copiedShift={...shift,srcStaff:staffId,srcDay:day};
+  S.selectedShift={staffId,day,shiftIdx};
   render();
 }
-function duplicateShift(staffId,day,shiftIdx){
-  const srcShifts=S.schedule[staffId]&&S.schedule[staffId][day];
-  if(!srcShifts)return;
-  const srcArr=Array.isArray(srcShifts)?srcShifts:[srcShifts];
-  const shift=srcArr[shiftIdx];
-  if(!shift)return;
-  S.modalCtx={srcShift:shift,srcStaffId:staffId,srcDay:day};
-  om('duplicateShift');
+
+function pasteShift(staffId,targetDay){
+  if(!S.copiedShift)return;
+  const shift=S.copiedShift;
+  // Open modal to optionally adjust time
+  S.modalCtx={srcShift:shift,targetStaffId:staffId,targetDay:targetDay};
+  om('pasteShift');
 }
-function execDuplicate(){
+
+function execPaste(){
   const ctx=S.modalCtx;if(!ctx||!ctx.srcShift)return;
-  const staffId=parseInt(document.getElementById('dupStaff')?.value)||ctx.srcStaffId;
-  const targetDay=document.getElementById('dupDay')?.value||ctx.srcDay;
-  // Check RTO
+  const staffId=parseInt(document.getElementById('pasteStaff')?.value)||ctx.targetStaffId;
+  const targetDay=document.getElementById('pasteDay')?.value||ctx.targetDay;
+  const startTime=document.getElementById('pasteStart')?.value||ctx.srcShift.startTime;
+  const endTime=document.getElementById('pasteEnd')?.value||ctx.srcShift.endTime;
+  // RTO check
   const rto=getRTO(staffId,targetDay);
-  if(rto){alert('Cannot duplicate: '+gs(staffId)?.name+' has approved time off on '+targetDay);return;}
-  // Check overlap
-  const conflict=getOverlap(staffId,targetDay,ctx.srcShift.startTime,ctx.srcShift.endTime);
-  if(conflict){alert('Conflict: '+conflict);return;}
+  if(rto){alert('Cannot paste: '+gs(staffId)?.name+' has approved time off on '+targetDay);return;}
+  // Overlap check
+  const conflict=getOverlap(staffId,targetDay,startTime,endTime);
+  if(conflict){alert('Time overlap: '+conflict);return;}
   if(!S.schedule[staffId])S.schedule[staffId]={};
+  const newShift={...ctx.srcShift,startTime,endTime,createdBy:isAdmin()?1:2,finalized:false};
+  delete newShift.srcStaff;delete newShift.srcDay;
   const tgt=S.schedule[staffId][targetDay];
-  const newShift={...ctx.srcShift,createdBy:isAdmin()?1:2,finalized:false};
   if(!tgt)S.schedule[staffId][targetDay]=[newShift];
   else if(Array.isArray(tgt))tgt.push(newShift);
   else S.schedule[staffId][targetDay]=[tgt,newShift];
-  audit('Schedule','Shift Duplicated',gs(staffId)?.name+' · '+targetDay+' '+newShift.startTime+'-'+newShift.endTime+' @ '+newShift.location+' (copied from '+gs(ctx.srcStaffId)?.name+' '+ctx.srcDay+')');
+  audit('Schedule','Shift Pasted',(gs(staffId)?.name||'?')+' · '+targetDay+' '+startTime+'-'+endTime+' @ '+newShift.location);
   cm();
 }
+
+function moveShift(staffId,day,shiftIdx){
+  const shifts=S.schedule[staffId]&&S.schedule[staffId][day];
+  if(!shifts)return;
+  const arr=Array.isArray(shifts)?shifts:[shifts];
+  const shift=arr[shiftIdx];
+  if(!shift)return;
+  S.modalCtx={srcShift:shift,srcStaffId:staffId,srcDay:day,srcIdx:shiftIdx};
+  om('moveShift');
+}
+
+function execMove(){
+  const ctx=S.modalCtx;if(!ctx||!ctx.srcShift)return;
+  const staffId=parseInt(document.getElementById('moveStaff')?.value)||ctx.srcStaffId;
+  const targetDay=document.getElementById('moveDay')?.value||ctx.srcDay;
+  // RTO check
+  const rto=getRTO(staffId,targetDay);
+  if(rto){alert('Cannot move: '+gs(staffId)?.name+' has approved time off on '+targetDay);return;}
+  // Overlap check (exclude self if same staff+day)
+  const excludeIdx=(staffId===ctx.srcStaffId&&targetDay===ctx.srcDay)?ctx.srcIdx:null;
+  const conflict=getOverlap(staffId,targetDay,ctx.srcShift.startTime,ctx.srcShift.endTime,excludeIdx);
+  if(conflict){alert('Time overlap: '+conflict);return;}
+  // Remove from source
+  const srcShifts=S.schedule[ctx.srcStaffId][ctx.srcDay];
+  const srcArr=Array.isArray(srcShifts)?srcShifts:[srcShifts];
+  if(srcArr.length<=1){delete S.schedule[ctx.srcStaffId][ctx.srcDay];}
+  else{srcArr.splice(ctx.srcIdx,1);}
+  // Add to target
+  if(!S.schedule[staffId])S.schedule[staffId]={};
+  const newShift={...ctx.srcShift,createdBy:isAdmin()?1:2};
+  const tgt=S.schedule[staffId][targetDay];
+  if(!tgt)S.schedule[staffId][targetDay]=[newShift];
+  else if(Array.isArray(tgt))tgt.push(newShift);
+  else S.schedule[staffId][targetDay]=[tgt,newShift];
+  audit('Schedule','Shift Moved',(gs(ctx.srcStaffId)?.name||'?')+' '+ctx.srcDay+' → '+(gs(staffId)?.name||'?')+' '+targetDay+' '+ctx.srcShift.startTime+'-'+ctx.srcShift.endTime);
+  cm();
+}
+
 function removeShift(staffId,day,shiftIdx){
   const srcShifts=S.schedule[staffId]&&S.schedule[staffId][day];
   if(!srcShifts)return;
   const srcArr=Array.isArray(srcShifts)?srcShifts:[srcShifts];
   const shift=srcArr[shiftIdx];
   if(!shift)return;
-  if(!confirm('Remove this shift?'))return;
+  if(!confirm('Remove this shift: '+shift.startTime+'-'+shift.endTime+' at '+shift.location+'?'))return;
   if(srcArr.length<=1){delete S.schedule[staffId][day];}
   else{srcArr.splice(shiftIdx,1);}
-  audit('Schedule','Shift Removed',gs(staffId)?.name+' · '+day+' '+shift.startTime+'-'+shift.endTime+' @ '+shift.location);
+  audit('Schedule','Shift Removed',(gs(staffId)?.name||'?')+' · '+day+' '+shift.startTime+'-'+shift.endTime+' @ '+shift.location);
   render();
 }
 
@@ -994,6 +1014,10 @@ function renderSchedule(){
   </div>
   ${S.role==='dsp'?`<div class="read-only-banner">👁 You can view the full schedule but cannot make changes.</div>`:''}
   ${isMgr()?`${(()=>{const approvedRTO=S.timeOff.filter(t=>t.status==='Approved'&&days.some(d=>getRTO(t.staffId,d)));return approvedRTO.length>0?`<div class="alert a-warn" style="margin-bottom:0.9rem"><strong>Approved Time Off This Week:</strong> ${approvedRTO.map(t=>{const s=gs(t.staffId);return(s?s.name:'?')+' · '+t.type+' '+t.start+(t.end!==t.start?' – '+t.end:'');}).join(' &nbsp;|&nbsp; ')} — These days are blocked from scheduling.</div>`:''})()}`:``}
+  ${S.copiedShift?`<div class="alert a-info" style="margin-bottom:0.65rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+    <span style="font-size:12px">📋 <strong>Copied:</strong> ${S.copiedShift.startTime}–${S.copiedShift.endTime} ${S.copiedShift.label?'('+S.copiedShift.label+')':''} @ ${S.copiedShift.location} — Click a <strong>+ Paste</strong> slot on the grid below</span>
+    <button class="btn" style="font-size:11px" onclick="S.copiedShift=null;S.selectedShift=null;render()">✕ Clear</button>
+  </div>`:''}
   <div class="card" style="overflow-x:auto">
     <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;flex-wrap:wrap">
       <span><span style="background:#185FA5;width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:3px"></span>Morning</span>
@@ -1015,10 +1039,12 @@ function renderSchedule(){
           const shiftBlocks=shifts.map((blk,bi)=>{
             const creator=gs(blk.createdBy);
             const sc=blk.label&&blk.label.toLowerCase().includes('admin')?'a':toMin(blk.startTime)<12*60?'m':toMin(blk.startTime)<18*60?'e':'n';
-            const canDrag=isMgr()&&canEditLoc(blk.location);
-            return`<div class="ss ${sc}" ${canDrag?'draggable="true" ondragstart="schedDragStart('+s.id+',\''+d+'\','+bi+',event)"':''} title="Created by: ${creator?creator.name:'Unknown'}${blk.finalized?' · Finalized':' · Draft'} · ${blk.location}${canDrag?' · Drag to move':''}" style="${canDrag?'cursor:grab':''}">${blk.startTime}–${blk.endTime}${blk.label?'<br>'+blk.label:''}<div style="font-size:9px;opacity:0.85">${blk.location}</div><div style="font-size:9px;opacity:0.7">${creator?creator.name.split(' ')[0]:''}</div>${canDrag?'<div style="display:flex;gap:2px;margin-top:2px"><span style="font-size:8px;cursor:pointer;opacity:0.7;background:rgba(255,255,255,0.3);border-radius:3px;padding:0 3px" onclick="event.stopPropagation();duplicateShift('+s.id+',\''+d+'\','+bi+')">⧉ Copy</span><span style="font-size:8px;cursor:pointer;opacity:0.7;background:rgba(255,255,255,0.3);border-radius:3px;padding:0 3px" onclick="event.stopPropagation();removeShift('+s.id+',\''+d+'\','+bi+')">✕</span></div>':''}</div>`;
+            const canEdit=isMgr()&&canEditLoc(blk.location);
+            const isCopied=S.copiedShift&&S.selectedShift&&S.selectedShift.staffId===s.id&&S.selectedShift.day===d&&S.selectedShift.shiftIdx===bi;
+            return`<div class="ss ${sc}${isCopied?' ss-copied':''}" title="${blk.startTime}–${blk.endTime} · ${blk.location} · ${creator?creator.name:'?'}${blk.finalized?' · Finalized':''}">${blk.startTime}–${blk.endTime}${blk.label?`<br>${blk.label}`:``}<div style="font-size:9px;opacity:0.85">${blk.location}</div><div style="font-size:9px;opacity:0.7">${creator?creator.name.split(' ')[0]:''}</div>${canEdit?`<div class="ss-actions"><span onclick="copyShift(${s.id},'${d}',${bi})" title="Copy">📋</span><span onclick="moveShift(${s.id},'${d}',${bi})" title="Move">↔</span><span onclick="removeShift(${s.id},'${d}',${bi})" title="Remove">✕</span></div>`:``}</div>`;
           }).join('');
-          return`<div class="sc ${rto?'rto-cell':''}" ondragover="schedDragOver(event)" ondrop="schedDrop(${s.id},'${d}',event)" style="min-height:44px">${rtoBlock}${shiftBlocks}</div>`;
+          const canPaste=S.copiedShift&&isMgr();
+          return`<div class="sc ${rto?'rto-cell':''}">${rtoBlock}${shiftBlocks}${canPaste&&!rto?`<div class="ss-paste" onclick="pasteShift(${s.id},'${d}')" title="Paste copied shift here">+ Paste</div>`:``}</div>`;
         }).join('')}`).join('')}
     </div>
   </div>
@@ -1442,7 +1468,7 @@ function renderModal(){
         </div>`:''}
     </div>`:''}
     <div class="mf">
-      ${isAdmin()?`<button class="btn btn-danger" onclick="if(confirm('Remove this staff member?')){audit('Staff','Staff Member Removed',s.name+' · '+s.role);S.staff=S.staff.filter(x=>x.id!==${s.id});cm()}">Remove</button>`:''}
+      ${isAdmin()?`<button class="btn btn-danger" onclick="if(confirm('Remove this staff member?')){audit('Staff','Staff Member Removed','${s.name} · ${s.role}');S.staff=S.staff.filter(x=>x.id!==${s.id});cm()}">Remove</button>`:''}
       <button class="btn btn-primary" onclick="cm();S.currentTrainStaff=${s.id};nav('training')">View Training</button>
     </div>`;
   }
@@ -1466,7 +1492,10 @@ function renderModal(){
       <select class="fi" id="cdocType" style="width:130px"><option>Care Plan</option><option>Medical Record</option><option>ISP</option><option>Consent Form</option><option>Assessment</option><option>Other</option></select>
       <button class="btn btn-primary" style="font-size:11px" onclick="const nm=document.getElementById('cdocName').value.trim();if(!nm)return;const _cdt=document.getElementById('cdocType').value;S.clients.find(x=>x.id===${c.id}).docs.push({name:nm,type:_cdt,date:today()});audit('Clients','Document Attached',c.name+' · '+nm+' ('+_cdt+')');render()">Attach</button>
     </div>`:''}
-    <div class="mf"><button class="btn" onclick="cm()">Close</button></div>`;
+    <div class="mf">
+      ${isAdmin()?`<button class="btn btn-danger" onclick="if(confirm('Remove this client?')){audit('Clients','Client Removed','${c.name} · ${c.location}');S.clients=S.clients.filter(x=>x.id!==${c.id});cm()}">Remove</button>`:''}
+      <button class="btn" onclick="cm()">Close</button>
+    </div>`;
   }
   else if(m==='addStaff'){body=`<div class="mt">Add Staff Member</div>
     <div class="g2"><div class="fg"><label class="fl">First Name</label><input class="fi" id="sf" placeholder="First"></div><div class="fg"><label class="fl">Last Name</label><input class="fi" id="sl" placeholder="Last"></div></div>
@@ -1623,25 +1652,51 @@ function renderModal(){
   }
 
 
-  else if(m==='duplicateShift'){
+  else if(m==='pasteShift'){
     const ctx=S.modalCtx;const shift=ctx.srcShift;
-    body=`<div class="mt">Duplicate Shift</div>
-      <div class="alert a-info" style="font-size:12px">Copy this shift to another day or staff member. Original shift stays in place.</div>
+    body=`<div class="mt">Paste Shift</div>
+      <div class="alert a-info" style="font-size:12px">Pasting a copy of the shift below. You can change the staff, day, or adjust the time.</div>
       <div style="border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:0.75rem;margin-bottom:0.9rem;background:#fafafa">
         <div style="font-size:12px;font-weight:600">${shift.startTime}–${shift.endTime}${shift.label?' · '+shift.label:''}</div>
-        <div style="font-size:11px;color:#666">${shift.location} · From: ${gs(ctx.srcStaffId)?.name||'?'} · ${ctx.srcDay}</div>
+        <div style="font-size:11px;color:#666">${shift.location}</div>
       </div>
       <div class="g2">
-        <div class="fg"><label class="fl">Copy to Staff</label><select class="fi" id="dupStaff">
+        <div class="fg"><label class="fl">Staff Member</label><select class="fi" id="pasteStaff">
+          ${S.staff.filter(s=>s.role!=='Admin').map(s=>`<option value="${s.id}" ${s.id===ctx.targetStaffId?'selected':''}>${s.name}</option>`).join('')}
+        </select></div>
+        <div class="fg"><label class="fl">Day</label><select class="fi" id="pasteDay">
+          ${days.map(d=>`<option ${d===ctx.targetDay?'selected':''}>${d}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Start Time</label><input class="fi" type="time" id="pasteStart" value="${shift.startTime}"></div>
+        <div class="fg"><label class="fl">End Time</label><input class="fi" type="time" id="pasteEnd" value="${shift.endTime}"></div>
+      </div>
+      <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+      <button class="btn btn-primary" onclick="execPaste()">Paste Shift</button></div>`;
+  }
+
+  else if(m==='moveShift'){
+    const ctx=S.modalCtx;const shift=ctx.srcShift;
+    body=`<div class="mt">Move Shift</div>
+      <div class="alert a-warn" style="font-size:12px">This will remove the shift from its current position and place it at the new location.</div>
+      <div style="border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:0.75rem;margin-bottom:0.9rem;background:#fafafa">
+        <div style="font-size:12px;font-weight:600">${shift.startTime}–${shift.endTime}${shift.label?' · '+shift.label:''}</div>
+        <div style="font-size:11px;color:#666">${shift.location} · Currently: ${gs(ctx.srcStaffId)?.name||'?'} · ${ctx.srcDay}</div>
+      </div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Move to Staff</label><select class="fi" id="moveStaff">
           ${S.staff.filter(s=>s.role!=='Admin').map(s=>`<option value="${s.id}" ${s.id===ctx.srcStaffId?'selected':''}>${s.name}</option>`).join('')}
         </select></div>
-        <div class="fg"><label class="fl">Copy to Day</label><select class="fi" id="dupDay">
+        <div class="fg"><label class="fl">Move to Day</label><select class="fi" id="moveDay">
           ${days.map(d=>`<option ${d===ctx.srcDay?'selected':''}>${d}</option>`).join('')}
         </select></div>
       </div>
       <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
-      <button class="btn btn-primary" onclick="execDuplicate()">Duplicate Shift</button></div>`;
+      <button class="btn btn-primary" onclick="execMove()">Move Shift</button></div>`;
   }
+
+
 
   if(!body)return'';
   return`<div class="mo" onclick="if(event.target===this)cm()"><div class="md">${body}</div></div>`;
