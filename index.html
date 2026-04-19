@@ -2597,23 +2597,23 @@ function render(){
   ];
   const titles={dashboard:'Dashboard',timeclock:'Time Clock',staff:'Staff',clients:'Clients',schedule:'Schedule',reports:'Reports',training:'Training',mar:'MAR',adminConfig:'App Settings',payRates:'Pay Rates',importData:'Import Data',exportReports:'Export & Reports',evv:'EVV — Utah Medicaid',auditLog:'Audit Log'};
   let main='';
-  if(S.page==='dashboard')main=renderDashboard();
-  else if(S.page==='timeclock')main=renderTimeclock();
-  else if(S.page==='staff')main=renderStaff();
-  else if(S.page==='clients')main=renderClients();
-  else if(S.page==='schedule')main=renderSchedule();
-  else if(S.page==='reports')main=renderReports();
-  else if(S.page==='training')main=renderTraining();
-  else if(S.page==='adminConfig')main=renderAdminConfig();
-  else if(S.page==='payRates')main=renderPayRates();
-  else if(S.page==='mar')main=renderMAR();
-  else if(S.page==='importData')main=renderImport();
-  else if(S.page==='exportReports')main=renderExport();
-  else if(S.page==='evv')main=renderEVV();
-  else if(S.page==='auditLog')main=renderAuditLog();
+  if(S.page==='dashboard')try{main=renderDashboard();}catch(e){main='<div class="card"><div class="alert a-err">Error loading page: '+e.message+'</div><pre style="font-size:10px;color:#888;margin-top:8px">'+e.stack+'</pre></div>';}
+  else if(S.page==='timeclock')try{main=renderTimeclock();}catch(e){main='<div class="card"><div class="alert a-err">Error loading page: '+e.message+'</div><pre style="font-size:10px;color:#888;margin-top:8px">'+e.stack+'</pre></div>';}
+  else if(S.page==='staff')try{main=renderStaff();}catch(e){main='<div class="card"><div class="alert a-err">Error loading page: '+e.message+'</div><pre style="font-size:10px;color:#888;margin-top:8px">'+e.stack+'</pre></div>';}
+  else if(S.page==='clients')try{main=renderClients();}catch(e){main='<div class="card"><div class="alert a-err">Error loading page: '+e.message+'</div><pre style="font-size:10px;color:#888;margin-top:8px">'+e.stack+'</pre></div>';}
+  else if(S.page==='schedule')try{main=renderSchedule();}catch(e){main='<div class="card"><div class="alert a-err">Error loading page: '+e.message+'</div><pre style="font-size:10px;color:#888;margin-top:8px">'+e.stack+'</pre></div>';}
+  else if(S.page==='reports')try{main=renderReports();}catch(e){main='<div class="card"><div class="alert a-err">Error loading page: '+e.message+'</div><pre style="font-size:10px;color:#888;margin-top:8px">'+e.stack+'</pre></div>';}
+  else if(S.page==='training')try{main=renderTraining();}catch(e){main='<div class="card"><div class="alert a-err">Error loading page: '+e.message+'</div><pre style="font-size:10px;color:#888;margin-top:8px">'+e.stack+'</pre></div>';}
+  else if(S.page==='adminConfig')try{main=renderAdminConfig();}catch(e){main='<div class="card"><div class="alert a-err">Error loading page: '+e.message+'</div><pre style="font-size:10px;color:#888;margin-top:8px">'+e.stack+'</pre></div>';}
+  else if(S.page==='payRates')try{main=renderPayRates();}catch(e){main='<div class="card"><div class="alert a-err">Error loading page: '+e.message+'</div><pre style="font-size:10px;color:#888;margin-top:8px">'+e.stack+'</pre></div>';}
+  else if(S.page==='mar')try{main=renderMAR();}catch(e){main='<div class="card"><div class="alert a-err">Error loading page: '+e.message+'</div><pre style="font-size:10px;color:#888;margin-top:8px">'+e.stack+'</pre></div>';}
+  else if(S.page==='importData')try{main=renderImport();}catch(e){main='<div class="card"><div class="alert a-err">Error loading page: '+e.message+'</div><pre style="font-size:10px;color:#888;margin-top:8px">'+e.stack+'</pre></div>';}
+  else if(S.page==='exportReports')try{main=renderExport();}catch(e){main='<div class="card"><div class="alert a-err">Error loading page: '+e.message+'</div><pre style="font-size:10px;color:#888;margin-top:8px">'+e.stack+'</pre></div>';}
+  else if(S.page==='evv')try{main=renderEVV();}catch(e){main='<div class="card"><div class="alert a-err">Error loading page: '+e.message+'</div><pre style="font-size:10px;color:#888;margin-top:8px">'+e.stack+'</pre></div>';}
+  else if(S.page==='auditLog')try{main=renderAuditLog();}catch(e){main='<div class="card"><div class="alert a-err">Error loading page: '+e.message+'</div><pre style="font-size:10px;color:#888;margin-top:8px">'+e.stack+'</pre></div>';}
 
   const ac=activeClass();
-  document.getElementById('root').innerHTML=`
+  try{ document.getElementById('root').innerHTML=`
     <div class="sidebar">
       <div class="logo"><div class="logo-name">Sonroc Care</div><div class="logo-sub">Perfect Stay Group</div></div>
       ${isAdmin()?`<div class="role-toggle">
@@ -2637,11 +2637,15 @@ function render(){
       <div class="topbar"><div class="page-title">${titles[S.page]||''}</div><span class="role-badge ${S.role}">${currentProfile?currentProfile.name:''} · ${roleLabel()}</span></div>
       <div class="content">${main}</div>
     </div>
-    ${renderModal()}`;
+    ${(()=>{try{return renderModal()}catch(e){console.error('Modal error:',e);return ''}})()}`;
 
   if(S.modal==='quiz'&&S.currentTrainStaff){
     const c=document.querySelector('.content');
     if(c)c.innerHTML=renderTraining();
+  }
+  }catch(err){
+    console.error('Render error:',err);
+    document.getElementById('root').innerHTML='<div style="padding:2rem;color:red;font-family:monospace"><h2>Render Error</h2><pre>'+err.message+'\n'+err.stack+'</pre><button onclick="S.page=\'dashboard\';S.modal=null;render()">Reset to Dashboard</button></div>';
   }
 }
 // Start with auth check instead of direct render
