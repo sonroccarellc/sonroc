@@ -121,6 +121,10 @@ input[type=checkbox]{accent-color:#1a3a5c;width:13px;height:13px}
 .login-forgot a{color:#185FA5;text-decoration:none}
 .user-bar{display:flex;align-items:center;gap:8px;padding:0.75rem 1rem;border-top:0.5px solid rgba(0,0,0,0.1);margin-top:auto}
 .logout-btn{font-size:11px;color:#A32D2D;cursor:pointer;border:none;background:none;font-family:inherit;text-decoration:underline}
+
+.ss[draggable=true]:hover{opacity:0.85;box-shadow:0 2px 6px rgba(0,0,0,0.15)}
+.ss[draggable=true]:active{opacity:0.6;cursor:grabbing}
+.sc[ondrop]:hover{background:rgba(26,58,92,0.04)}
 </style></head><body>
 <div class="app" id="root"></div>
 
@@ -896,6 +900,87 @@ function renderClients(){
   </div>`;
 }
 
+// ── SCHEDULE DRAG & DROP + DUPLICATE ──────────────────────
+let dragData=null;
+
+function schedDragStart(staffId,day,shiftIdx,e){
+  if(S.role==='dsp')return;
+  dragData={staffId,day,shiftIdx};
+  if(e&&e.dataTransfer){e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain','shift');}
+}
+function schedDragOver(e){if(e)e.preventDefault();}
+function schedDrop(staffId,targetDay,e){
+  if(e)e.preventDefault();
+  if(!dragData||S.role==='dsp')return;
+  const src=dragData;dragData=null;
+  // Get the source shift
+  const srcShifts=S.schedule[src.staffId]&&S.schedule[src.staffId][src.day];
+  if(!srcShifts)return;
+  const srcArr=Array.isArray(srcShifts)?srcShifts:[srcShifts];
+  const shift=srcArr[src.shiftIdx];
+  if(!shift)return;
+  // Check permissions
+  if(!canEditLoc(shift.location)){alert('You can only edit locations you manage.');return;}
+  // Check RTO
+  const rto=getRTO(staffId,targetDay);
+  if(rto){alert('Cannot move shift: '+gs(staffId)?.name+' has approved time off on '+targetDay);return;}
+  // Check overlap at target
+  const conflict=getOverlap(staffId,targetDay,shift.startTime,shift.endTime);
+  if(conflict){alert('Conflict at target: '+conflict);return;}
+  // Move: remove from source
+  if(srcArr.length<=1){delete S.schedule[src.staffId][src.day];}
+  else{srcArr.splice(src.shiftIdx,1);}
+  // Add to target
+  if(!S.schedule[staffId])S.schedule[staffId]={};
+  const tgt=S.schedule[staffId][targetDay];
+  const newShift={...shift,createdBy:isAdmin()?1:2};
+  if(!tgt)S.schedule[staffId][targetDay]=[newShift];
+  else if(Array.isArray(tgt))tgt.push(newShift);
+  else S.schedule[staffId][targetDay]=[tgt,newShift];
+  audit('Schedule','Shift Moved',gs(src.staffId)?.name+' · '+src.day+' → '+gs(staffId)?.name+' · '+targetDay+' '+shift.startTime+'-'+shift.endTime+' @ '+shift.location);
+  render();
+}
+function duplicateShift(staffId,day,shiftIdx){
+  const srcShifts=S.schedule[staffId]&&S.schedule[staffId][day];
+  if(!srcShifts)return;
+  const srcArr=Array.isArray(srcShifts)?srcShifts:[srcShifts];
+  const shift=srcArr[shiftIdx];
+  if(!shift)return;
+  S.modalCtx={srcShift:shift,srcStaffId:staffId,srcDay:day};
+  om('duplicateShift');
+}
+function execDuplicate(){
+  const ctx=S.modalCtx;if(!ctx||!ctx.srcShift)return;
+  const staffId=parseInt(document.getElementById('dupStaff')?.value)||ctx.srcStaffId;
+  const targetDay=document.getElementById('dupDay')?.value||ctx.srcDay;
+  // Check RTO
+  const rto=getRTO(staffId,targetDay);
+  if(rto){alert('Cannot duplicate: '+gs(staffId)?.name+' has approved time off on '+targetDay);return;}
+  // Check overlap
+  const conflict=getOverlap(staffId,targetDay,ctx.srcShift.startTime,ctx.srcShift.endTime);
+  if(conflict){alert('Conflict: '+conflict);return;}
+  if(!S.schedule[staffId])S.schedule[staffId]={};
+  const tgt=S.schedule[staffId][targetDay];
+  const newShift={...ctx.srcShift,createdBy:isAdmin()?1:2,finalized:false};
+  if(!tgt)S.schedule[staffId][targetDay]=[newShift];
+  else if(Array.isArray(tgt))tgt.push(newShift);
+  else S.schedule[staffId][targetDay]=[tgt,newShift];
+  audit('Schedule','Shift Duplicated',gs(staffId)?.name+' · '+targetDay+' '+newShift.startTime+'-'+newShift.endTime+' @ '+newShift.location+' (copied from '+gs(ctx.srcStaffId)?.name+' '+ctx.srcDay+')');
+  cm();
+}
+function removeShift(staffId,day,shiftIdx){
+  const srcShifts=S.schedule[staffId]&&S.schedule[staffId][day];
+  if(!srcShifts)return;
+  const srcArr=Array.isArray(srcShifts)?srcShifts:[srcShifts];
+  const shift=srcArr[shiftIdx];
+  if(!shift)return;
+  if(!confirm('Remove this shift?'))return;
+  if(srcArr.length<=1){delete S.schedule[staffId][day];}
+  else{srcArr.splice(shiftIdx,1);}
+  audit('Schedule','Shift Removed',gs(staffId)?.name+' · '+day+' '+shift.startTime+'-'+shift.endTime+' @ '+shift.location);
+  render();
+}
+
 function renderSchedule(){
   const mgrLocs=getMgrLocs();
   const pendingReqs=S.scheduleRequests.filter(r=>r.status==='Pending').length;
@@ -927,12 +1012,13 @@ function renderSchedule(){
           const dayData=S.schedule[s.id]&&S.schedule[s.id][d];
           const shifts=dayData?(Array.isArray(dayData)?dayData:[dayData]):[];
           const rtoBlock=rto?`<div class="ss rto" title="Approved Time Off: ${rto.type} ${rto.start}${rto.end!==rto.start?' – '+rto.end:''}">🏖 Off<div style="font-size:9px;opacity:0.9">${rto.type}</div></div>`:'';
-          const shiftBlocks=shifts.map(blk=>{
+          const shiftBlocks=shifts.map((blk,bi)=>{
             const creator=gs(blk.createdBy);
             const sc=blk.label&&blk.label.toLowerCase().includes('admin')?'a':toMin(blk.startTime)<12*60?'m':toMin(blk.startTime)<18*60?'e':'n';
-            return`<div class="ss ${sc}" title="Created by: ${creator?creator.name:'Unknown'}${blk.finalized?' · Finalized':' · Draft'} · ${blk.location}">${blk.startTime}–${blk.endTime}${blk.label?'<br>'+blk.label:''}<div style="font-size:9px;opacity:0.85">${blk.location}</div><div style="font-size:9px;opacity:0.7">${creator?creator.name.split(' ')[0]:''}</div></div>`;
+            const canDrag=isMgr()&&canEditLoc(blk.location);
+            return`<div class="ss ${sc}" ${canDrag?'draggable="true" ondragstart="schedDragStart('+s.id+',\''+d+'\','+bi+',event)"':''} title="Created by: ${creator?creator.name:'Unknown'}${blk.finalized?' · Finalized':' · Draft'} · ${blk.location}${canDrag?' · Drag to move':''}" style="${canDrag?'cursor:grab':''}">${blk.startTime}–${blk.endTime}${blk.label?'<br>'+blk.label:''}<div style="font-size:9px;opacity:0.85">${blk.location}</div><div style="font-size:9px;opacity:0.7">${creator?creator.name.split(' ')[0]:''}</div>${canDrag?'<div style="display:flex;gap:2px;margin-top:2px"><span style="font-size:8px;cursor:pointer;opacity:0.7;background:rgba(255,255,255,0.3);border-radius:3px;padding:0 3px" onclick="event.stopPropagation();duplicateShift('+s.id+',\''+d+'\','+bi+')">⧉ Copy</span><span style="font-size:8px;cursor:pointer;opacity:0.7;background:rgba(255,255,255,0.3);border-radius:3px;padding:0 3px" onclick="event.stopPropagation();removeShift('+s.id+',\''+d+'\','+bi+')">✕</span></div>':''}</div>`;
           }).join('');
-          return`<div class="sc ${rto?'rto-cell':''}">${rtoBlock}${shiftBlocks}</div>`;
+          return`<div class="sc ${rto?'rto-cell':''}" ondragover="schedDragOver(event)" ondrop="schedDrop(${s.id},'${d}',event)" style="min-height:44px">${rtoBlock}${shiftBlocks}</div>`;
         }).join('')}`).join('')}
     </div>
   </div>
@@ -994,6 +1080,29 @@ function renderReports(){
 }
 
 function renderTraining(){
+  // Admin: Training Materials viewer tab
+  if(isAdmin()&&S.viewTrainingMaterials){
+    const modIdx=S.viewTrainingMaterials-1;
+    const mod=TM[modIdx];
+    if(!mod){S.viewTrainingMaterials=null;render();return'';}
+    return`
+    <button class="btn" onclick="S.viewTrainingMaterials=null;render()">← Back to Training</button>
+    <div class="card" style="margin-top:0.9rem">
+      <div style="font-size:17px;font-weight:600;margin-bottom:4px;color:#1a3a5c">Module ${mod.id}: ${mod.title}</div>
+      <div style="font-size:12px;color:#888;margin-bottom:1.2rem">Training material and quiz questions — Admin review</div>
+
+      <div style="font-size:13px;font-weight:600;margin-bottom:0.75rem">Quiz Questions (${mod.questions.length})</div>
+      ${mod.questions.map((q,qi)=>`
+        <div style="border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:0.9rem;margin-bottom:0.65rem">
+          <div style="font-size:12px;font-weight:600;margin-bottom:8px">${qi+1}. ${q.q}</div>
+          ${q.opts.map((o,oi)=>`
+            <div style="display:flex;align-items:center;gap:7px;padding:4px 8px;border-radius:5px;font-size:12px;${oi===q.ans?'background:#EAF3DE;font-weight:600;border:0.5px solid #639922':'color:#666'}">
+              ${oi===q.ans?'✓':'○'} ${o}
+            </div>`).join('')}
+        </div>`).join('')}
+    </div>`;
+  }
+
   if(S.currentTrainStaff){
     const stf=gs(S.currentTrainStaff);
     const prog=S.trainingProgress[S.currentTrainStaff]||{completedModules:[],signedPP:false,signedFinal:false};
@@ -1044,9 +1153,33 @@ function renderTraining(){
   }
   const canManage=isAdmin();
   return`
+    ${isAdmin()?`<div class="tabs" style="margin-bottom:0.9rem">
+      <button class="tab ${!S.trainingTab?'active':''}" onclick="S.trainingTab=0;render()">👥 Staff Progress</button>
+      <button class="tab ${S.trainingTab===1?'active':''}" onclick="S.trainingTab=1;render()">📚 Training Materials</button>
+    </div>`:''}
+    ${isAdmin()&&S.trainingTab===1?`
+      <div class="alert a-info" style="margin-bottom:0.9rem">Review all training modules, quiz questions, and correct answers. Click any module to see the full content.</div>
+      <div class="g2">
+        ${TM.map(mod=>`<div class="card" style="cursor:pointer" onclick="S.viewTrainingMaterials=${mod.id};render()">
+          <div style="font-size:14px;font-weight:600;color:#1a3a5c;margin-bottom:4px">Module ${mod.id}</div>
+          <div style="font-size:13px;font-weight:600;margin-bottom:6px">${mod.title}</div>
+          <div class="dr"><span class="dl">Questions</span><span class="badge bi" style="font-size:10px">${mod.questions.length}</span></div>
+          <div style="margin-top:6px;font-size:11px;color:#888">Click to review questions and answers</div>
+        </div>`).join('')}
+        <div class="card" style="border-left:3px solid #854F0B">
+          <div style="font-size:14px;font-weight:600;color:#854F0B;margin-bottom:4px">P&P Manual</div>
+          <div style="font-size:12px;color:#666;line-height:1.7">Staff must read and sign the Policies & Procedures Manual after completing all 6 modules. Covers: HIPAA, abuse/neglect reporting, medication admin, incident documentation, and shift report requirements.</div>
+        </div>
+        <div class="card" style="border-left:3px solid #3B6D11">
+          <div style="font-size:14px;font-weight:600;color:#3B6D11;margin-bottom:4px">Final Acknowledgment</div>
+          <div style="font-size:12px;color:#666;line-height:1.7">Final signature confirming completion of all modules and P&P manual. Timestamped and recorded in the audit log.</div>
+        </div>
+      </div>
+    `:`
     <div class="sec-hdr"><div style="font-size:12px;color:#666">Select a staff member to manage training</div></div>
-    ${!canManage?`<div class="read-only-banner">👁 Only admins can manage training records.</div>`:''}
-    <div class="g2">${S.staff.map(s=>{const{pct}=tp(s.id);return`<div class="card" style="cursor:${canManage?'pointer':'default'}" onclick="${canManage?`S.currentTrainStaff=${s.id};render()`:''}" >
+    ${!canManage?`<div class="read-only-banner">👁 Only admins can manage training records.</div>`:''}`}
+    ${isAdmin()&&S.trainingTab===1?'':``}
+    ${(!isAdmin()||!S.trainingTab)?`<div class="g2">${S.staff.map(s=>{const{pct}=tp(s.id);return`<div class="card" style="cursor:${canManage?'pointer':'default'}" onclick="${canManage?`S.currentTrainStaff=${s.id};render()`:''}" >
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:0.9rem">
         <div class="avatar" style="width:40px;height:40px;font-size:14px">${ini(s.name)}</div>
         <div style="flex:1"><div style="font-size:13px;font-weight:600">${s.name}</div><div style="font-size:11px;color:#666">${s.role}</div></div>
@@ -1054,7 +1187,8 @@ function renderTraining(){
       </div>
       <div class="pb"><div class="pf" style="width:${pct}%"></div></div>
       <div style="font-size:11px;color:#888;margin-top:5px">${(S.trainingProgress[s.id]||{completedModules:[]}).completedModules.length}/6 modules · ${pct===100?'Certified':'In progress'}</div>
-    </div>`;}).join('')}</div>`;
+    </div>`;}).join('')}</div>`:''}`+
+  '';
 }
 
 function renderAdminConfig(){
@@ -1486,6 +1620,27 @@ function renderModal(){
         S.marEntries.push(entry);
         audit('MAR','Medication Administered',(gc(${cid})?.name||'')+' · '+entry.medName+' '+entry.dose+' · '+entry.status+' · '+(gs(entry.staffId)?.name||''));
         cm()">Record Administration</button></div>`;
+  }
+
+
+  else if(m==='duplicateShift'){
+    const ctx=S.modalCtx;const shift=ctx.srcShift;
+    body=`<div class="mt">Duplicate Shift</div>
+      <div class="alert a-info" style="font-size:12px">Copy this shift to another day or staff member. Original shift stays in place.</div>
+      <div style="border:0.5px solid rgba(0,0,0,0.1);border-radius:8px;padding:0.75rem;margin-bottom:0.9rem;background:#fafafa">
+        <div style="font-size:12px;font-weight:600">${shift.startTime}–${shift.endTime}${shift.label?' · '+shift.label:''}</div>
+        <div style="font-size:11px;color:#666">${shift.location} · From: ${gs(ctx.srcStaffId)?.name||'?'} · ${ctx.srcDay}</div>
+      </div>
+      <div class="g2">
+        <div class="fg"><label class="fl">Copy to Staff</label><select class="fi" id="dupStaff">
+          ${S.staff.filter(s=>s.role!=='Admin').map(s=>`<option value="${s.id}" ${s.id===ctx.srcStaffId?'selected':''}>${s.name}</option>`).join('')}
+        </select></div>
+        <div class="fg"><label class="fl">Copy to Day</label><select class="fi" id="dupDay">
+          ${days.map(d=>`<option ${d===ctx.srcDay?'selected':''}>${d}</option>`).join('')}
+        </select></div>
+      </div>
+      <div class="mf"><button class="btn" onclick="cm()">Cancel</button>
+      <button class="btn btn-primary" onclick="execDuplicate()">Duplicate Shift</button></div>`;
   }
 
   if(!body)return'';
